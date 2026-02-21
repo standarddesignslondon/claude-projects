@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NBA Games</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Apply saved theme before first paint to prevent flash -->
+  <script>try{var _t=localStorage.getItem('nba-theme');if(_t==='light')document.documentElement.classList.add('light');}catch(e){}</script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:             #07090f;
+      --surface:        #0d1320;
+      --surface-2:      #111826;
+      --border:         #1c2b3a;
+      --border-sub:     #141f2e;
+      /* Four-level text hierarchy */
+      --text-1:         #e8edf2;   /* scores, primary labels */
+      --text-2:         #9ab5c8;   /* team names, status details */
+      --text-3:         #6a8fa8;   /* date labels, col headers, venue, "until tipoff" */
+      --text-muted:     #3a526a;   /* purely decorative: chevrons, city sub-labels */
+      --blue:           #4fa3f7;
+      --blue-dim:       rgba(79,163,247,.10);
+      --green:          #34c96b;
+      --green-dim:      rgba(52,201,107,.10);
+      --amber:          #e8a030;
+      --amber-dim:      rgba(232,160,48,.10);
+      --badge-final-bg: rgba(255,255,255,.05);
+    }
+
+    /* ── Light theme overrides ───────────────── */
+    html.light {
+      --bg:             #f1f5f8;
+      --surface:        #ffffff;
+      --surface-2:      #f6f9fb;
+      --border:         #c8d8e6;
+      --border-sub:     #dde8f0;
+      --text-1:         #0c1a26;
+      --text-2:         #2a4d68;
+      --text-3:         #4a7090;
+      --text-muted:     #8ab0c8;
+      --blue:           #1470c4;
+      --blue-dim:       rgba(20,112,196,.12);
+      --green:          #168448;
+      --green-dim:      rgba(22,132,72,.12);
+      --amber:          #b46800;
+      --amber-dim:      rgba(180,104,0,.12);
+      --badge-final-bg: rgba(0,0,0,.06);
+    }
+    /* NBA mark: middle bar invisible on light bg — swap to a visible tone */
+    html.light .nba-mark span:nth-child(2) { background: #a8c4d8; }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text-1);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Header ─────────────────────────────── */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border-sub);
+      padding: 16px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nba-mark {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .nba-mark span {
+      display: block;
+      width: 4px;
+      border-radius: 2px;
+    }
+    .nba-mark span:nth-child(1) { height: 14px; background: #c8102e; }
+    .nba-mark span:nth-child(2) { height: 18px; background: #f0f0f0; }
+    .nba-mark span:nth-child(3) { height: 14px; background: #1d428a; }
+
+    .header-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text-1);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #refresh-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      opacity: 0;
+      transition: opacity .2s;
+    }
+    #refresh-dot.active { opacity: 1; animation: blink .7s ease-in-out; }
+
+    #updated-at {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .theme-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-3);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background .15s, color .15s, border-color .15s;
+      font-family: inherit;
+    }
+    .theme-btn:hover { background: var(--surface-2); color: var(--text-2); }
+
+    /* ── Main ───────────────────────────────── */
+    .main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 36px 28px 72px;
+    }
+
+    /* ── Two-column layout ──────────────────── */
+    .columns {
+      display: grid;
+      grid-template-columns: 1fr 1px 1fr;
+      gap: 0;
+      align-items: start;
+    }
+
+    .col { min-width: 0; }
+    .col:first-child { padding-right: 36px; }
+    .col:last-child  { padding-left:  36px; }
+
+    .col-divider {
+      background: var(--border-sub);
+      align-self: stretch;
+    }
+
+    .col-heading {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--text-2);
+      padding-bottom: 14px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border-sub);
+    }
+
+    .col-empty {
+      font-size: 13px;
+      color: var(--text-3);
+      padding: 12px 2px;
+    }
+
+    /* ── Date group ─────────────────────────── */
+    .date-group { margin-bottom: 40px; }
+
+    .date-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 10px;
+      padding-left: 2px;
+    }
+
+    .games-stack {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    /* ── Game card ──────────────────────────── */
+    .game-card {
+      background: var(--surface);
+      padding: 18px 22px;
+      border-top: 1px solid var(--border-sub);
+      transition: background .15s;
+    }
+    .game-card:first-child { border-top: none; }
+    .game-card:hover { background: var(--surface-2); }
+
+    /* Status row */
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 4px;
+      line-height: 1.4;
+    }
+
+    .badge-upcoming { background: var(--blue-dim);  color: var(--blue); }
+    .badge-live     { background: var(--green-dim); color: var(--green); }
+    .badge-final    { background: var(--badge-final-bg); color: var(--text-3); }
+
+    .live-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 1.5s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+
+    .status-detail {
+      font-size: 12px;
+      color: var(--text-2);
+    }
+
+    /* Body: teams left, score/countdown right */
+    .game-body {
+      display: flex;
+      align-items: stretch;
+      gap: 16px;
+    }
+
+    .teams-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .team-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .team-logo {
+      width: 30px;
+      height: 30px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
+    .team-logo-placeholder {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .team-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-1);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .team-name-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-left: 2px;
+      font-weight: 400;
+    }
+
+    /* Score / countdown column */
+    .right-col {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .scores { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+
+    .score-num {
+      font-size: 22px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-1);
+      line-height: 1;
+      min-width: 40px;
+      text-align: right;
+    }
+
+    .score-num.leading  { color: var(--text-1); font-weight: 800; }
+    .score-num.trailing { color: var(--text-2); }
+
+    /* Countdown */
+    .countdown-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 3px;
+    }
+
+    .countdown-value {
+      font-size: 20px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: var(--blue);
+      letter-spacing: .01em;
+      line-height: 1;
+    }
+
+    .countdown-sub {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--text-3);
+    }
+
+    /* Venue */
+    .venue-row {
+      margin-top: 12px;
+      font-size: 11px;
+      color: var(--text-3);
+    }
+
+    /* ── Box score (expandable) ─────────────── */
+    .is-result { cursor: pointer; user-select: none; }
+
+    .expand-chevron {
+      margin-left: auto;
+      color: var(--text-muted);
+      transition: transform .25s ease, color .15s;
+      flex-shrink: 0;
+    }
+    .is-result:hover .expand-chevron { color: var(--text-3); }
+    .is-result.is-open .expand-chevron { transform: rotate(180deg); }
+
+    /* Concertina */
+    .box-score-wrap {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows .28s ease;
+    }
+    .box-score-wrap.is-open { grid-template-rows: 1fr; }
+    .bs-inner {
+      overflow: hidden;
+      border-top: 1px solid transparent;
+      transition: border-top-color .28s ease;
+    }
+    .box-score-wrap.is-open .bs-inner { border-top-color: var(--border-sub); }
+
+    .bs-loading, .bs-error {
+      padding: 18px 0 6px;
+      font-size: 13px;
+      color: var(--text-3);
+    }
+    .bs-error { color: #f87171; }
+
+    /* Team sections inside box score */
+    .bs-team { padding-top: 16px; }
+    .bs-team + .bs-team {
+      margin-top: 6px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border-sub);
+    }
+    .bs-team-name {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 8px;
+    }
+
+    /* Stats table */
+    .bs-table-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .bs-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .bs-table thead th {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      padding: 0 8px 6px;
+      text-align: right;
+      border-bottom: 1px solid var(--border-sub);
+    }
+    .bs-table thead th.bs-name-col { text-align: left; padding-left: 0; }
+    .bs-table thead th.bs-pts-col  { color: var(--text-2); }
+    .bs-table tbody td {
+      padding: 5px 8px;
+      text-align: right;
+      color: var(--text-2);
+      font-variant-numeric: tabular-nums;
+      border-bottom: 1px solid var(--border-sub);
+    }
+    .bs-table tbody tr:last-child td { border-bottom: none; }
+    .bs-table tbody td.bs-name-col {
+      text-align: left;
+      padding-left: 0;
+      color: var(--text-1);
+      font-weight: 500;
+      min-width: 104px;
+    }
+    .bs-table tbody td.bs-pts-col { color: var(--text-1); font-weight: 700; }
+    /* Starter / bench gap row */
+    .bench-divider td {
+      padding: 0 !important;
+      height: 5px;
+      background: var(--bg);
+      border-bottom: none !important;
+    }
+    /* DNP rows */
+    .is-dnp td { color: var(--text-3) !important; font-style: italic; }
+    .bs-dnp-reason { text-align: left !important; padding-left: 10px !important; }
+
+    /* Collapse button at foot of box score */
+    .bs-collapse-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin: 14px 0 4px;
+      padding: 4px 0;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      transition: color .15s;
+      font-family: inherit;
+    }
+    .bs-collapse-btn:hover { color: var(--text-2); }
+    .bs-collapse-btn svg { transform: rotate(180deg); }
+
+    /* ── State screens ─────────────────────── */
+    .state-screen {
+      text-align: center;
+      padding: 72px 0;
+      font-size: 14px;
+      color: var(--text-3);
+    }
+    .state-screen.error { color: #f87171; }
+
+    /* ── Animations ────────────────────────── */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: .35; transform: scale(.75); }
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: .2; }
+    }
+
+    /* ── Responsive ─────────────────────────── */
+    @media (max-width: 780px) {
+      .main { padding: 28px 18px 60px; }
+      .columns {
+        grid-template-columns: 1fr;
+      }
+      .col:first-child { padding-right: 0; }
+      .col:last-child  { padding-left: 0; padding-top: 40px; }
+      .col-divider { display: none; }
+    }
+
+    @media (max-width: 480px) {
+      .header { padding: 14px 18px; }
+      .main { padding: 20px 14px 56px; }
+      .game-card { padding: 14px 16px; }
+      .team-name-sub { display: none; }
+      .score-num { font-size: 19px; }
+      .countdown-value { font-size: 17px; }
+      .venue-row { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <div class="nba-mark">
+      <span></span><span></span><span></span>
+    </div>
+    <span class="header-title">NBA Games</span>
+  </div>
+  <div class="header-right">
+    <div id="refresh-dot"></div>
+    <span id="updated-at"></span>
+    <button id="theme-btn" class="theme-btn" aria-label="Toggle theme"></button>
+  </div>
+</header>
+
+<main class="main" id="main">
+  <div class="state-screen">Loading games…</div>
+</main>
+
+<script>
+'use strict';
+
+// ── Theme toggle ────────────────────────────────────────────────────────────
+(function () {
+  const btn  = document.getElementById('theme-btn');
+  const MOON = `<svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor" aria-hidden="true"><path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/></svg>`;
+  const SUN  = `<svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707z"/></svg>`;
+
+  function apply(light) {
+    document.documentElement.classList.toggle('light', light);
+    btn.innerHTML  = light ? MOON : SUN;
+    btn.ariaLabel  = light ? 'Switch to dark mode' : 'Switch to light mode';
+    localStorage.setItem('nba-theme', light ? 'light' : 'dark');
+  }
+
+  const saved = localStorage.getItem('nba-theme');
+  // Sync icon with whatever the anti-flash script already applied
+  apply(saved === 'light');
+
+  btn.addEventListener('click', () => apply(!document.documentElement.classList.contains('light')));
+}());
+
+const API = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard';
+
+let tickId   = null;
+let refreshId = null;
+
+// ── Utilities ──────────────────────────────────────────────────────────────
+
+function toESPNDate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}${m}${day}`;
+}
+
+function localDateKey(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function dateLabel(key) {
+  const now = new Date();
+  if (key === localDateKey(now)) return 'Today';
+  const tom = new Date(now); tom.setDate(now.getDate() + 1);
+  if (key === localDateKey(tom)) return 'Tomorrow';
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric'
+  });
+}
+
+function formatLocalTime(d) {
+  return d.toLocaleTimeString('en-US', {
+    hour: 'numeric', minute: '2-digit', timeZoneName: 'short'
+  });
+}
+
+function formatCountdown(ms) {
+  if (ms <= 0) return 'Any moment';
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h >= 24) {
+    const d = Math.floor(h / 24);
+    const rh = h % 24;
+    return `${d}d ${String(rh).padStart(2,'0')}h ${String(m).padStart(2,'0')}m`;
+  }
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+
+function periodLabel(period) {
+  if (!period || period <= 4) return `Q${period || 1}`;
+  const ot = period - 4;
+  return ot === 1 ? 'OT' : `${ot}OT`;
+}
+
+// ── Fetch ──────────────────────────────────────────────────────────────────
+
+async function fetchDay(d) {
+  const r = await fetch(`${API}?dates=${toESPNDate(d)}`);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const j = await r.json();
+  return j.events || [];
+}
+
+async function loadGames() {
+  const now = new Date();
+  // Fetch 2 days back through 2 days ahead to cover the full ±48h window
+  const days = [-2, -1, 0, 1, 2].map(n => { const d = new Date(now); d.setDate(d.getDate() + n); return d; });
+
+  const fetched = await Promise.allSettled(days.map(fetchDay));
+  const all = fetched.flatMap(r => r.status === 'fulfilled' ? r.value : []);
+
+  // Deduplicate
+  const seen = new Set();
+  const unique = all.filter(e => seen.has(e.id) ? false : seen.add(e.id));
+
+  const aheadMs  = now.getTime() + 48 * 3600 * 1000;
+  const behindMs = now.getTime() - 48 * 3600 * 1000; // past 48 hours
+
+  return unique
+    .filter(g => {
+      const t = new Date(g.date).getTime();
+      const state = g.status?.type?.state;
+      if (state === 'in')   return true;
+      if (state === 'post') return t > behindMs;
+      return t >= behindMs && t <= aheadMs;
+    })
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+}
+
+// ── Build HTML ─────────────────────────────────────────────────────────────
+
+function logoOrPlaceholder(team) {
+  if (team?.logo) {
+    return `<img class="team-logo" src="${team.logo}" alt="${team.abbreviation || ''}" loading="lazy">`;
+  }
+  return `<div class="team-logo-placeholder">${team?.abbreviation || '?'}</div>`;
+}
+
+function teamNameHtml(team) {
+  if (!team) return '<span class="team-name">TBD</span>';
+  const city = team.location || '';
+  const nick = team.shortDisplayName || team.abbreviation || '';
+  return `<span class="team-name">${city}<span class="team-name-sub">${nick !== city ? ' ' + nick : ''}</span></span>`;
+}
+
+function cardHtml(game) {
+  const comps   = game.competitions?.[0]?.competitors || [];
+  const away    = comps.find(c => c.homeAway === 'away') || {};
+  const home    = comps.find(c => c.homeAway === 'home') || {};
+  const status  = game.status;
+  const state   = status?.type?.state;
+  const gameDate = new Date(game.date);
+  const venue   = game.competitions?.[0]?.venue?.fullName || '';
+
+  // ── Status row ──
+  let statusHtml;
+  if (state === 'in') {
+    const pLabel = periodLabel(status?.period);
+    const clock  = status?.displayClock || '';
+    statusHtml = `
+      <div class="status-row">
+        <span class="badge badge-live"><span class="live-dot"></span>Live</span>
+        <span class="status-detail">${pLabel} · ${clock}</span>
+      </div>`;
+  } else if (state === 'post') {
+    const detail = status?.type?.detail || 'Final';
+    statusHtml = `
+      <div class="status-row">
+        <span class="badge badge-final">Final</span>
+        <span class="status-detail">${detail}</span>
+        <svg class="expand-chevron" viewBox="0 0 10 6" width="10" height="6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>`;
+  } else {
+    statusHtml = `
+      <div class="status-row">
+        <span class="badge badge-upcoming">Upcoming</span>
+        <span class="status-detail">${formatLocalTime(gameDate)}</span>
+      </div>`;
+  }
+
+  // ── Right column ──
+  let rightHtml;
+  if (state === 'pre') {
+    const msUntil = gameDate.getTime() - Date.now();
+    rightHtml = `
+      <div class="right-col">
+        <div class="countdown-wrap">
+          <span class="countdown-value" data-gametime="${gameDate.getTime()}">${formatCountdown(msUntil)}</span>
+          <span class="countdown-sub">until tipoff</span>
+        </div>
+      </div>`;
+  } else {
+    const awayScore = parseInt(away.score ?? -1, 10);
+    const homeScore = parseInt(home.score ?? -1, 10);
+    const awayClass = awayScore > homeScore ? 'leading' : (awayScore < homeScore ? 'trailing' : '');
+    const homeClass = homeScore > awayScore ? 'leading' : (homeScore < awayScore ? 'trailing' : '');
+    const awayDisp = awayScore >= 0 ? awayScore : '–';
+    const homeDisp = homeScore >= 0 ? homeScore : '–';
+    rightHtml = `
+      <div class="right-col">
+        <div class="scores">
+          <span class="score-num ${awayClass}">${awayDisp}</span>
+          <span class="score-num ${homeClass}">${homeDisp}</span>
+        </div>
+      </div>`;
+  }
+
+  const venueHtml = venue
+    ? `<div class="venue-row">${venue}</div>`
+    : '';
+
+  return `
+    <div class="game-card${state === 'post' ? ' is-result' : ''}" data-game-id="${game.id}">
+      ${statusHtml}
+      <div class="game-body">
+        <div class="teams-col">
+          <div class="team-row">
+            ${logoOrPlaceholder(away.team)}
+            ${teamNameHtml(away.team)}
+          </div>
+          <div class="team-row">
+            ${logoOrPlaceholder(home.team)}
+            ${teamNameHtml(home.team)}
+          </div>
+        </div>
+        ${rightHtml}
+      </div>
+      ${venueHtml}
+      ${state === 'post' ? '<div class="box-score-wrap"><div class="bs-inner"></div></div>' : ''}
+    </div>`;
+}
+
+function buildDateGroups(games) {
+  // Group by local date, preserving existing sort order
+  const groups = new Map();
+  for (const g of games) {
+    const key = localDateKey(new Date(g.date));
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(g);
+  }
+  let html = '';
+  for (const [key, dayGames] of groups) {
+    html += `
+      <div class="date-group">
+        <div class="date-label">${dateLabel(key)}</div>
+        <div class="games-stack">
+          ${dayGames.map(cardHtml).join('')}
+        </div>
+      </div>`;
+  }
+  return html;
+}
+
+function renderGames(games) {
+  const main = document.getElementById('main');
+
+  if (!games.length) {
+    main.innerHTML = '<div class="state-screen">No games found in the ±48 hour window.</div>';
+    return;
+  }
+
+  // Split: schedule = upcoming + live; results = final, newest first
+  const schedule = games.filter(g => g.status?.type?.state !== 'post');
+  const results  = games
+    .filter(g => g.status?.type?.state === 'post')
+    .sort((a, b) => new Date(b.date) - new Date(a.date)); // reverse-chrono
+
+  const scheduleHtml = schedule.length
+    ? buildDateGroups(schedule)
+    : '<p class="col-empty">No games in the next 48 hours.</p>';
+
+  const resultsHtml = results.length
+    ? buildDateGroups(results)
+    : '<p class="col-empty">No results in the past 48 hours.</p>';
+
+  main.innerHTML = `
+    <div class="columns">
+      <div class="col">
+        <div class="col-heading">Schedule</div>
+        ${scheduleHtml}
+      </div>
+      <div class="col-divider"></div>
+      <div class="col">
+        <div class="col-heading">Results</div>
+        ${resultsHtml}
+      </div>
+    </div>`;
+}
+
+// ── Box score ──────────────────────────────────────────────────────────────
+
+const boxScoreCache  = new Map();
+const expandedGames  = new Set();
+
+async function fetchBoxScore(gameId) {
+  if (boxScoreCache.has(gameId)) return boxScoreCache.get(gameId);
+  const r = await fetch(
+    `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=${gameId}`
+  );
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const data = await r.json();
+  boxScoreCache.set(gameId, data);
+  return data;
+}
+
+function renderBoxScore(data) {
+  const players = data.boxscore?.players;
+  if (!players?.length) return '<p class="bs-error">Box score not available.</p>';
+
+  const COLS    = ['MIN', 'FG', '3PT', 'FT', 'REB', 'AST', 'STL', 'BLK', 'TO', 'PTS'];
+  const PTS_COL = COLS.length - 1;
+
+  function teamBlock(teamData) {
+    const teamName = teamData.team?.displayName || '';
+    const stats    = teamData.statistics?.[0];
+    if (!stats) return '';
+
+    const labels   = (stats.labels || []).map(l => l.toUpperCase());
+    const idxMap   = COLS.map(c => labels.indexOf(c));
+    const athletes = stats.athletes || [];
+    const starters = athletes.filter(a =>  a.starter && !a.didNotPlay);
+    const bench    = athletes.filter(a => !a.starter && !a.didNotPlay);
+    const dnps     = athletes.filter(a =>  a.didNotPlay);
+
+    const makeRow = a => {
+      const name  = a.athlete?.shortName || a.athlete?.displayName || '?';
+      const cells = idxMap.map((si, ci) => {
+        const val = si >= 0 ? (a.stats?.[si] ?? '–') : '–';
+        return `<td${ci === PTS_COL ? ' class="bs-pts-col"' : ''}>${val}</td>`;
+      }).join('');
+      return `<tr><td class="bs-name-col">${name}</td>${cells}</tr>`;
+    };
+
+    const dnpRow = a => {
+      const name   = a.athlete?.shortName || a.athlete?.displayName || '?';
+      const reason = a.reason || 'DNP';
+      return `<tr class="is-dnp"><td class="bs-name-col">${name}</td><td class="bs-dnp-reason" colspan="${COLS.length}">${reason}</td></tr>`;
+    };
+
+    const divider = `<tr class="bench-divider"><td colspan="${COLS.length + 1}"></td></tr>`;
+    const headers = COLS.map((c, i) =>
+      `<th${i === PTS_COL ? ' class="bs-pts-col"' : ''}>${c}</th>`
+    ).join('');
+
+    return `
+      <div class="bs-team">
+        <div class="bs-team-name">${teamName}</div>
+        <div class="bs-table-scroll">
+          <table class="bs-table">
+            <thead><tr><th class="bs-name-col">Player</th>${headers}</tr></thead>
+            <tbody>
+              ${starters.map(makeRow).join('')}
+              ${bench.length ? divider + bench.map(makeRow).join('') : ''}
+              ${dnps.length  ? divider + dnps.map(dnpRow).join('')   : ''}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  }
+
+  const body = players.map(teamBlock).join('');
+  if (!body) return '<p class="bs-error">Box score not available.</p>';
+
+  return body + `
+    <button class="bs-collapse-btn">
+      <svg viewBox="0 0 10 6" width="10" height="6" fill="none">
+        <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Collapse
+    </button>`;
+}
+
+async function toggleBoxScore(card) {
+  const gameId = card.dataset.gameId;
+  const wrap   = card.querySelector('.box-score-wrap');
+
+  if (card.classList.contains('is-open')) {
+    card.classList.remove('is-open');
+    wrap.classList.remove('is-open');
+    expandedGames.delete(gameId);
+    return;
+  }
+
+  card.classList.add('is-open');
+  wrap.classList.add('is-open');
+  expandedGames.add(gameId);
+
+  if (!wrap.dataset.loaded) {
+    wrap.querySelector('.bs-inner').innerHTML = '<p class="bs-loading">Loading…</p>';
+    try {
+      const data = await fetchBoxScore(gameId);
+      wrap.querySelector('.bs-inner').innerHTML = renderBoxScore(data);
+      wrap.dataset.loaded = 'true';
+    } catch {
+      wrap.querySelector('.bs-inner').innerHTML = '<p class="bs-error">Box score unavailable.</p>';
+    }
+  }
+}
+
+function restoreExpanded() {
+  for (const gameId of expandedGames) {
+    const card = document.querySelector(`.game-card[data-game-id="${gameId}"]`);
+    if (!card) continue;
+    const wrap = card.querySelector('.box-score-wrap');
+    if (!wrap) continue;
+    card.classList.add('is-open');
+    wrap.classList.add('is-open');
+    if (boxScoreCache.has(gameId)) {
+      wrap.querySelector('.bs-inner').innerHTML = renderBoxScore(boxScoreCache.get(gameId));
+      wrap.dataset.loaded = 'true';
+    }
+  }
+}
+
+// ── Live countdown tick ────────────────────────────────────────────────────
+
+function tick() {
+  const now = Date.now();
+  for (const el of document.querySelectorAll('[data-gametime]')) {
+    const t = parseInt(el.dataset.gametime, 10);
+    el.textContent = formatCountdown(t - now);
+  }
+}
+
+// ── Refresh loop ───────────────────────────────────────────────────────────
+
+function nextRefreshMs(games) {
+  const hasLive = games.some(g => g.status?.type?.state === 'in');
+  return hasLive ? 30_000 : 5 * 60_000;
+}
+
+async function refresh() {
+  const dot = document.getElementById('refresh-dot');
+  dot.classList.add('active');
+  setTimeout(() => dot.classList.remove('active'), 900);
+
+  try {
+    const games = await loadGames();
+    renderGames(games);
+    restoreExpanded();
+    document.getElementById('updated-at').textContent =
+      'Updated ' + new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+    clearTimeout(refreshId);
+    refreshId = setTimeout(refresh, nextRefreshMs(games));
+  } catch (err) {
+    console.error('Refresh failed:', err);
+    clearTimeout(refreshId);
+    refreshId = setTimeout(refresh, 60_000);
+  }
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+
+async function init() {
+  // Click delegation: toggle box score on result cards
+  document.getElementById('main').addEventListener('click', e => {
+    if (e.target.closest('.bs-collapse-btn')) {
+      // Collapse button inside the box score
+      const card = e.target.closest('.game-card');
+      if (card) toggleBoxScore(card);
+      return;
+    }
+    // Ignore clicks anywhere else inside an open box score
+    if (e.target.closest('.box-score-wrap')) return;
+    // Toggle on the card header area
+    const card = e.target.closest('.game-card.is-result');
+    if (card) toggleBoxScore(card);
+  });
+
+  try {
+    const games = await loadGames();
+    renderGames(games);
+    document.getElementById('updated-at').textContent =
+      'Updated ' + new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    refreshId = setTimeout(refresh, nextRefreshMs(games));
+  } catch (err) {
+    document.getElementById('main').innerHTML =
+      '<div class="state-screen error">Could not load games — check your connection and reload.</div>';
+    console.error(err);
+  }
+
+  tickId = setInterval(tick, 1000);
+}
+
+init();
+</script>
+</body>
+</html>
