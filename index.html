@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Third Letter Finder</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f0f4f8;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 440px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #1a202c;
+      margin-bottom: 8px;
+    }
+
+    p.subtitle {
+      color: #718096;
+      font-size: 0.95rem;
+      margin-bottom: 32px;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 12px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 1rem;
+      color: #2d3748;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus {
+      border-color: #667eea;
+    }
+
+    button {
+      padding: 12px 20px;
+      background: #667eea;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    button:hover {
+      background: #5a67d8;
+    }
+
+    button:active {
+      transform: scale(0.97);
+    }
+
+    .result {
+      min-height: 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      padding: 20px;
+      font-size: 1rem;
+    }
+
+    .result.success {
+      background: #ebf8ff;
+      border: 2px solid #bee3f8;
+    }
+
+    .result.error {
+      background: #fff5f5;
+      border: 2px solid #fed7d7;
+    }
+
+    .result.hidden {
+      background: transparent;
+      border: 2px dashed #e2e8f0;
+    }
+
+    .result .label {
+      color: #718096;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    .result .letter {
+      font-size: 3rem;
+      font-weight: 800;
+      color: #667eea;
+      line-height: 1;
+    }
+
+    .result .message {
+      color: #718096;
+      font-size: 0.95rem;
+    }
+
+    .result.error .message {
+      color: #c53030;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Third Letter Finder</h1>
+    <p class="subtitle">Enter a word to find its third letter.</p>
+
+    <div class="input-group">
+      <input
+        type="text"
+        id="wordInput"
+        placeholder="Type a word..."
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button onclick="findThirdLetter()">Find</button>
+    </div>
+
+    <div class="result hidden" id="result">
+      <span class="message">Your result will appear here.</span>
+    </div>
+  </div>
+
+  <script>
+    const input = document.getElementById('wordInput');
+    const resultBox = document.getElementById('result');
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') findThirdLetter();
+    });
+
+    function findThirdLetter() {
+      const word = input.value.trim();
+      resultBox.className = 'result';
+      resultBox.innerHTML = '';
+
+      if (!word) {
+        resultBox.classList.add('error');
+        resultBox.innerHTML = '<span class="message">Please enter a word first.</span>';
+        return;
+      }
+
+      if (word.length < 3) {
+        resultBox.classList.add('error');
+        resultBox.innerHTML = `<span class="message">"${word}" is too short — it needs at least 3 letters.</span>`;
+        return;
+      }
+
+      const thirdLetter = word[2];
+      resultBox.classList.add('success');
+      resultBox.innerHTML = `
+        <span class="label">Third letter of "${word}"</span>
+        <span class="letter">${thirdLetter.toUpperCase()}</span>
+      `;
+    }
+  </script>
+</body>
+</html>
