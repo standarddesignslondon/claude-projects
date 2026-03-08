@@ -215,6 +215,18 @@ def build_ui():
 
         drop_zone.bind("<Button-1>", click_open)
 
+    # macOS: handle files dropped onto the .app icon in Finder
+    def _open_document(*paths):
+        for p in paths:
+            process_file(p, status_label, drop_zone)
+            break  # process only first file dropped at once
+
+    root.createcommand("::tk::mac::OpenDocument", _open_document)
+
+    # macOS: if launched with a file argument (e.g. via open -a App file.pdf)
+    if len(sys.argv) == 2 and sys.argv[1].lower().endswith(".pdf"):
+        root.after(100, lambda: process_file(sys.argv[1], status_label, drop_zone))
+
     # Centre on screen
     root.update_idletasks()
     w, h = root.winfo_width(), root.winfo_height()
@@ -225,13 +237,4 @@ def build_ui():
 
 
 if __name__ == "__main__":
-    # CLI mode: python pdf_bleed_trimmer.py input.pdf
-    if len(sys.argv) == 2:
-        try:
-            out = trim_bleed(sys.argv[1])
-            print(f"Saved: {out}")
-        except Exception as exc:
-            print(f"Error: {exc}", file=sys.stderr)
-            sys.exit(1)
-    else:
-        build_ui()
+    build_ui()
