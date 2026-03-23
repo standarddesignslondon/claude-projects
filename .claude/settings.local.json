@@ -12,7 +12,9 @@
       "Bash(git init:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push)"
+      "Bash(git push)",
+      "mcp__3ef32505-9750-4ae7-a1a9-9f9124941bd4__list_inboxes",
+      "mcp__3ef32505-9750-4ae7-a1a9-9f9124941bd4__send_message"
     ]
   }
 }
