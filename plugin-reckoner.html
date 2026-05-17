@@ -1,0 +1,4745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plugin Reckoner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700;9..144,900&family=JetBrains+Mono:wght@400;500;700&family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0a;
+  --bg-elevated: #141414;
+  --bg-input: #1a1a1a;
+  --fg: #e8e6e0;
+  --fg-muted: #888580;
+  --fg-dim: #5a5752;
+  --accent: #d97757;
+  --accent-dim: #8a4a32;
+  --border: #262624;
+  --border-bright: #3a3835;
+  --tag-bg: #1f1d1a;
+  --tag-fg: #b8b3a8;
+  --subcat-chip-bg: #1a1815;
+  --shadow: rgba(0,0,0,0.4);
+}
+
+[data-theme="light"] {
+  --bg: #f5f3ee;
+  --bg-elevated: #ffffff;
+  --bg-input: #ffffff;
+  --fg: #1a1815;
+  --fg-muted: #6b6660;
+  --fg-dim: #9a948c;
+  --accent: #c5552d;
+  --accent-dim: #e88a6a;
+  --border: #d8d3c8;
+  --border-bright: #b8b2a4;
+  --tag-bg: #ebe7dd;
+  --tag-fg: #4a4640;
+  --subcat-chip-bg: #ece8df;
+  --shadow: rgba(0,0,0,0.08);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter Tight', sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  line-height: 1.5;
+  min-height: 100vh;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+::selection { background: var(--accent); color: var(--bg); }
+
+/* ============ HEADER ============ */
+.header {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 3rem 2rem 2rem;
+  border-bottom: 1px solid var(--border);
+}
+.header-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.title {
+  font-family: 'Fraunces', serif;
+  font-weight: 900;
+  font-size: clamp(2.2rem, 5vw, 4rem);
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+  font-variation-settings: "opsz" 144;
+}
+.title em {
+  font-style: italic;
+  color: var(--accent);
+  font-weight: 400;
+}
+.subtitle {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--fg-muted);
+  margin-top: 0.5rem;
+}
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+.btn {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  padding: 0.5rem 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+.btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+.btn.primary:hover {
+  background: transparent;
+  color: var(--accent);
+}
+
+/* ============ CONTROLS ============ */
+.controls {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+}
+.search-row {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+.search-box {
+  flex: 1;
+  position: relative;
+}
+.search-box input {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  padding: 0.875rem 1rem 0.875rem 2.75rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+  border-radius: 2px;
+}
+.search-box input:focus { border-color: var(--accent); }
+.search-box input::placeholder { color: var(--fg-dim); }
+.search-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--fg-dim);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  pointer-events: none;
+}
+.search-clear {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--fg-dim);
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  display: none;
+}
+.search-clear:hover { color: var(--accent); }
+.search-clear.visible { display: block; }
+.counter {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  white-space: nowrap;
+}
+.counter strong {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* Filter chips */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+.chip-group-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--fg-dim);
+  margin-right: 0.3rem;
+}
+.chip {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--fg-muted);
+  padding: 0.35rem 0.8rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+.chip:hover {
+  border-color: var(--border-bright);
+  color: var(--fg);
+}
+.chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+  font-weight: 500;
+}
+
+/* Sub-category chips have a slightly different look */
+.subchips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  padding-top: 0.6rem;
+  border-top: 1px dashed var(--border);
+  animation: slideDown 0.25s ease;
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.subchips.hidden { display: none; }
+.subchip {
+  background: var(--subcat-chip-bg);
+  border: 1px solid transparent;
+  color: var(--fg-muted);
+  padding: 0.3rem 0.7rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-radius: 12px;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.subchip:hover {
+  color: var(--fg);
+  border-color: var(--border-bright);
+}
+.subchip.active {
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 500;
+}
+
+/* ============ QUICK PICK BANNER ============ */
+.quickpick-banner {
+  max-width: 1400px;
+  margin: 1rem auto 0;
+  padding: 0 2rem;
+  display: none;
+}
+.quickpick-banner.visible { display: block; animation: slideDown 0.3s ease; }
+.quickpick-banner-inner {
+  background: linear-gradient(95deg, var(--accent) 0%, var(--accent-dim) 100%);
+  color: var(--bg);
+  padding: 1rem 1.25rem;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 4px 20px var(--shadow);
+}
+[data-theme="light"] .quickpick-banner-inner {
+  background: linear-gradient(95deg, var(--accent) 0%, #a04420 100%);
+  color: #fff;
+}
+.qp-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  opacity: 0.85;
+  white-space: nowrap;
+  border-right: 1px solid currentColor;
+  padding-right: 1rem;
+  font-weight: 500;
+}
+.qp-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.qp-q {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.05rem;
+  line-height: 1.2;
+}
+.qp-a {
+  font-family: 'Inter Tight', sans-serif;
+  font-size: 0.85rem;
+  opacity: 0.95;
+  line-height: 1.35;
+}
+.qp-actions {
+  display: flex;
+  gap: 0.3rem;
+}
+.qp-btn {
+  background: transparent;
+  border: 1px solid currentColor;
+  color: inherit;
+  padding: 0.4rem 0.7rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+.qp-btn:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+/* ============ MAIN ============ */
+.main {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+.category-section {
+  margin-bottom: 3.5rem;
+  scroll-margin-top: 240px;
+}
+.category-section.empty { display: none; }
+.category-header {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--fg);
+}
+.category-header h2 {
+  font-family: 'Fraunces', serif;
+  font-weight: 700;
+  font-size: 1.7rem;
+  letter-spacing: -0.02em;
+  font-variation-settings: "opsz" 72;
+}
+.category-header .count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-left: auto;
+}
+.category-header.parent-cat { border-bottom: 1px solid var(--accent); }
+.category-header.parent-cat h2 {
+  color: var(--accent);
+  font-style: italic;
+  font-weight: 500;
+}
+
+/* Subcategory header within a category */
+.subcat-group { margin-bottom: 1.5rem; }
+.subcat-group.empty { display: none; }
+.subcat-header {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--fg-muted);
+  margin-bottom: 0.6rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px dashed var(--border);
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+.subcat-header .subcat-count {
+  font-size: 0.6rem;
+  color: var(--fg-dim);
+  margin-left: auto;
+}
+
+.plugin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 0;
+}
+.plugin {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  transition: background 0.15s ease;
+}
+.plugin:hover { background: var(--bg-elevated); }
+.plugin.hidden { display: none; }
+.plugin-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  font-size: 0.85rem;
+  color: var(--fg);
+  line-height: 1.3;
+}
+.plugin-name .manufacturer {
+  color: var(--fg-dim);
+  font-weight: 400;
+}
+.plugin-desc {
+  font-size: 0.85rem;
+  color: var(--fg-muted);
+  line-height: 1.45;
+}
+.plugin-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.15rem;
+}
+.tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--tag-fg);
+  background: var(--tag-bg);
+  padding: 0.15rem 0.5rem;
+  border-radius: 2px;
+}
+.tag.also { opacity: 0.65; }
+
+.plugin-name mark,
+.plugin-desc mark {
+  background: var(--accent);
+  color: var(--bg);
+  padding: 0 2px;
+  border-radius: 1px;
+  font-weight: 500;
+}
+
+.no-results {
+  display: none;
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--fg-muted);
+}
+.no-results.visible { display: block; }
+.no-results h3 {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  font-style: italic;
+}
+.no-results p {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--fg-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+
+/* ============ JUMP NAV ============ */
+.jump-nav {
+  position: fixed;
+  right: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: none;
+  flex-direction: column;
+  gap: 0.3rem;
+  z-index: 5;
+  background: var(--bg-elevated);
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+@media (min-width: 1600px) { .jump-nav { display: flex; } }
+.jump-nav a {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--fg-muted);
+  text-decoration: none;
+  padding: 0.2rem 0.4rem;
+  transition: color 0.15s ease;
+}
+.jump-nav a:hover { color: var(--accent); }
+.jump-nav a.parent {
+  color: var(--accent);
+  font-style: italic;
+  font-weight: 500;
+  margin-top: 0.4rem;
+  border-bottom: 1px dashed var(--border);
+  padding-bottom: 0.3rem;
+}
+.jump-nav a.parent:first-child { margin-top: 0; }
+
+/* ============ FOOTER ============ */
+.footer {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+  border-top: 1px solid var(--border);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--fg-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .header { padding: 2rem 1rem 1rem; }
+  .controls { padding: 1rem; }
+  .main { padding: 1rem; }
+  .quickpick-banner { padding: 0 1rem; }
+  .quickpick-banner-inner { flex-direction: column; align-items: flex-start; }
+  .qp-label { border-right: none; padding-right: 0; }
+  .plugin-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body data-theme="dark">
+
+<header class="header">
+  <div class="header-top">
+    <div>
+      <h1 class="title">Plugin <em>Reckoner</em></h1>
+      <div class="subtitle">A working reference for ~470 installed plugins</div>
+    </div>
+    <div class="header-actions">
+      <button class="btn primary" id="diceBtn">🎲 Random Pick</button>
+      <button class="btn" id="themeToggle" title="Toggle theme">◐ Light</button>
+    </div>
+  </div>
+</header>
+
+<section class="controls">
+  <div class="search-row">
+    <div class="search-box">
+      <span class="search-icon">⌕</span>
+      <input type="text" id="search" placeholder="Search by name, manufacturer, category, or what it does…" autocomplete="off">
+      <button class="search-clear" id="searchClear">clear</button>
+    </div>
+    <div class="counter">
+      <strong id="counterNum">0</strong> / <span id="counterTotal">0</span> shown
+    </div>
+  </div>
+  <div class="chips" id="chips">
+    <span class="chip-group-label">Filter:</span>
+    <button class="chip active" data-cat="all" data-level="main">All</button>
+  </div>
+  <div class="subchips hidden" id="subchips"></div>
+</section>
+
+<div class="quickpick-banner" id="quickpickBanner">
+  <div class="quickpick-banner-inner">
+    <div class="qp-label">🎲 Pick</div>
+    <div class="qp-content">
+      <div class="qp-q" id="qpQ"></div>
+      <div class="qp-a" id="qpA"></div>
+    </div>
+    <div class="qp-actions">
+      <button class="qp-btn" id="qpReroll" title="Get another suggestion">↻ Reroll</button>
+      <button class="qp-btn" id="qpClose" title="Dismiss">×</button>
+    </div>
+  </div>
+</div>
+
+<nav class="jump-nav" id="jumpNav"></nav>
+
+<main class="main">
+  <div id="results"></div>
+  <div class="no-results" id="noResults">
+    <h3>No matches</h3>
+    <p>Try a different search term</p>
+  </div>
+</main>
+
+<footer class="footer">
+  Compiled 17 May 2026 · Built from authoritative CFBundleIdentifier metadata · Press / to search · Edit the JSON inside this file to update
+</footer>
+
+<script>
+// ============================================================
+// EMBEDDED DATA
+// ============================================================
+const PLUGINS = [
+  {
+    "name": "ARP 2600 V3",
+    "manufacturer": "Arturia",
+    "category": "Synth · Analog",
+    "subcategory": "Vintage Hardware",
+    "desc": "ARP 2600 semi-modular emulation"
+  },
+  {
+    "name": "Buchla Easel V",
+    "manufacturer": "Arturia",
+    "category": "Synth · Analog",
+    "subcategory": "Vintage Hardware",
+    "desc": "Buchla Music Easel west-coast modular"
+  },
+  {
+    "name": "CS-80 V4",
+    "manufacturer": "Arturia",
+    "category": "Synth · Analog",
+    "subcategory": "Vintage Hardware",
+    "desc": "Yamaha CS-80 polyphonic analog"
+  },
+  {
+    "name": "Jun-6 V",
+    "manufacturer": "Arturia",
+    "category": "Synth · Analog",
+    "subcategory": "Vintage Hardware",
+    "desc": "Roland Juno-6 chorus-rich analog"
+  },
+  {
+    "name": "Jup-8 V4",
+    "manufacturer": "Arturia",
+    "category": "Synth · Analog",
+    "subcategory": "Vintage Hardware",
+    "desc": "Roland Jupiter-8 analog polysynth"
+  },
+  {
+    "name": "Jup-8000 V",
+    "manufacturer": "Arturia",
+    "category": "Synth · Analog",
+    "subcategory": "Virtual Analog",
+    "desc": "Roland JP-8000 virtual analog (supersaw)"
+  },
+  {
+    "name": "KORG MS-20 V",
+    "manufacturer": "Arturia",
+    "category": "Synth · Analog",
+    "subcategory": "Vintage Hardware",
+    "desc": "Korg MS-20 semi-modular analog"
+  },
+  {
+    "name": "Matrix-12 V2",
+    "manufacturer": "Arturia",
+    "category": "Synth · Analog",
+    "subcategory": "Vintage Hardware",
+    "desc": "Oberheim Matrix-12 polysynth"
+  },
+  {
+    "name": "Mini V3",
+    "manufacturer": "Arturia",
+    "category": "Synth · Analog",
+    "subcategory": "Vintage Hardware",
+    "desc": "Minimoog Model D"
+  },
+  {
+    "name": "Mini V4",
+    "manufacturer": "Arturia",
+    "category": "Synth · Analog",
+    "subcategory": "Vintage Hardware",
+    "desc": "Minimoog Model D (latest)"
+  },
+  {
+    "name": "MiniBrute V",
+    "manufacturer": "Arturia",
+    "category": "Synth · Analog",
+    "subcategory": "Modern Analog",
+    "desc": "Arturia MiniBrute hardware emulation"
+  },
+  {
+    "name": "MiniFreak V",
+    "manufacturer": "Arturia",
+    "category": "Synth · Analog",
+    "subcategory": "Modern Analog",
+    "desc": "Arturia MiniFreak hybrid synth"
+  },
+  {
+    "name": "Modular V3",
+    "manufacturer": "Arturia",
+    "category": "Synth · Analog",
+    "subcategory": "Modular",
+    "desc": "Moog Modular system"
+  },
+  {
+    "name": "OP-Xa V",
+    "manufacturer": "Arturia",
+    "category": "Synth · Analog",
+    "subcategory": "Vintage Hardware",
+    "desc": "Oberheim OB-Xa polysynth"
+  },
+  {
+    "name": "Prophet-5 V",
+    "manufacturer": "Arturia",
+    "category": "Synth · Analog",
+    "subcategory": "Vintage Hardware",
+    "desc": "Sequential Prophet-5"
+  },
+  {
+    "name": "SEM V2",
+    "manufacturer": "Arturia",
+    "category": "Synth · Analog",
+    "subcategory": "Vintage Hardware",
+    "desc": "Oberheim SEM module"
+  },
+  {
+    "name": "SEM V3",
+    "manufacturer": "Arturia",
+    "category": "Synth · Analog",
+    "subcategory": "Vintage Hardware",
+    "desc": "Oberheim SEM (latest)"
+  },
+  {
+    "name": "Solina V2",
+    "manufacturer": "Arturia",
+    "category": "Synth · Analog",
+    "subcategory": "String Machine",
+    "desc": "ARP Solina String Ensemble"
+  },
+  {
+    "name": "Synthi V",
+    "manufacturer": "Arturia",
+    "category": "Synth · Analog",
+    "subcategory": "Vintage Hardware",
+    "desc": "EMS Synthi AKS"
+  },
+  {
+    "name": "Synthx V",
+    "manufacturer": "Arturia",
+    "category": "Synth · Analog",
+    "subcategory": "Vintage Hardware",
+    "desc": "Oberheim OB-Xa-style polysynth"
+  },
+  {
+    "name": "Ultra Analog Session 2",
+    "manufacturer": "AAS",
+    "category": "Synth · Analog",
+    "subcategory": "Modern Analog",
+    "desc": "Virtual analog synth, preset-based"
+  },
+  {
+    "name": "Novachord",
+    "manufacturer": "Cherry Audio",
+    "category": "Synth · Analog",
+    "subcategory": "Vintage Hardware",
+    "desc": "1939 Hammond Novachord — world's first polyphonic electronic instrument"
+  },
+  {
+    "name": "Solovox",
+    "manufacturer": "Cherry Audio",
+    "category": "Synth · Analog",
+    "subcategory": "Vintage Hardware",
+    "desc": "1940s Hammond Solovox monophonic"
+  },
+  {
+    "name": "Syntronik 2",
+    "manufacturer": "IK Multimedia",
+    "category": "Synth · Analog",
+    "subcategory": "Vintage Hardware",
+    "desc": "Multi-synth ROMpler of classic analog hardware"
+  },
+  {
+    "name": "Berlin",
+    "manufacturer": "Korg Gadget",
+    "category": "Synth · Analog",
+    "subcategory": "Vintage Hardware",
+    "desc": "MS-20 synth"
+  },
+  {
+    "name": "Brussels",
+    "manufacturer": "Korg Gadget",
+    "category": "Synth · Analog",
+    "subcategory": "Vintage Hardware",
+    "desc": "Mono/Poly synth"
+  },
+  {
+    "name": "Helsinki",
+    "manufacturer": "Korg Gadget",
+    "category": "Synth · Analog",
+    "subcategory": "Modern Analog",
+    "desc": "Saw-wave bass synth"
+  },
+  {
+    "name": "Lexington",
+    "manufacturer": "Korg Gadget",
+    "category": "Synth · Analog",
+    "subcategory": "Vintage Hardware",
+    "desc": "ARP Odyssey emulation"
+  },
+  {
+    "name": "Marseille",
+    "manufacturer": "Korg Gadget",
+    "category": "Synth · Analog",
+    "subcategory": "Modern Analog",
+    "desc": "Saw-wave lead synth"
+  },
+  {
+    "name": "Montpellier",
+    "manufacturer": "Korg Gadget",
+    "category": "Synth · Analog",
+    "subcategory": "Vintage Hardware",
+    "desc": "Polysix-style chord synth"
+  },
+  {
+    "name": "M-Tron Pro",
+    "manufacturer": "GForce",
+    "category": "Synth · Analog",
+    "subcategory": "String Machine",
+    "desc": "Mellotron tape-replay emulation",
+    "also": [
+      "Keys"
+    ]
+  },
+  {
+    "name": "M-Tron Pro IV",
+    "manufacturer": "GForce",
+    "category": "Synth · Analog",
+    "subcategory": "String Machine",
+    "desc": "Mellotron tape-replay (mark IV)",
+    "also": [
+      "Keys"
+    ]
+  },
+  {
+    "name": "Pendulate",
+    "manufacturer": "Newfangled Audio",
+    "category": "Synth · Analog",
+    "subcategory": "Experimental",
+    "desc": "Free chaos oscillator / unstable analog"
+  },
+  {
+    "name": "PolyMAX",
+    "manufacturer": "UAD",
+    "category": "Synth · Analog",
+    "subcategory": "Vintage Hardware",
+    "desc": "Korg Polysix-inspired polysynth"
+  },
+  {
+    "name": "CMI V",
+    "manufacturer": "Arturia",
+    "category": "Synth · Wavetable",
+    "subcategory": "Vintage Hybrid",
+    "desc": "Fairlight CMI sampling/synthesis hybrid"
+  },
+  {
+    "name": "CZ V",
+    "manufacturer": "Arturia",
+    "category": "Synth · Wavetable",
+    "subcategory": "Vintage Hybrid",
+    "desc": "Casio CZ phase-distortion synth"
+  },
+  {
+    "name": "Pigments",
+    "manufacturer": "Arturia",
+    "category": "Synth · Wavetable",
+    "subcategory": "Modern Hybrid",
+    "desc": "Flagship hybrid: wavetable + virtual analog + sample + harmonic + granular",
+    "also": [
+      "Granular",
+      "Texture"
+    ]
+  },
+  {
+    "name": "Prophet-VS V",
+    "manufacturer": "Arturia",
+    "category": "Synth · Wavetable",
+    "subcategory": "Vintage Hybrid",
+    "desc": "Sequential Prophet VS vector synth"
+  },
+  {
+    "name": "Synclavier V",
+    "manufacturer": "Arturia",
+    "category": "Synth · Wavetable",
+    "subcategory": "Vintage Hybrid",
+    "desc": "Synclavier additive/FM hybrid"
+  },
+  {
+    "name": "Junior-Lite",
+    "manufacturer": "Fors",
+    "category": "Synth · Wavetable",
+    "subcategory": "Lo-fi/8-bit",
+    "desc": "Free 4-bit Game Boy-style wavetable synth (16-voice)"
+  },
+  {
+    "name": "Chiangmai",
+    "manufacturer": "Korg Gadget",
+    "category": "Synth · Wavetable",
+    "subcategory": "Modern Hybrid",
+    "desc": "Wavetable synth"
+  },
+  {
+    "name": "Kingston",
+    "manufacturer": "Korg Gadget",
+    "category": "Synth · Wavetable",
+    "subcategory": "Modern Hybrid",
+    "desc": "Wavetable bass"
+  },
+  {
+    "name": "Vancouver",
+    "manufacturer": "Korg Gadget",
+    "category": "Synth · Wavetable",
+    "subcategory": "Modern Hybrid",
+    "desc": "Wavetable / spectral synth"
+  },
+  {
+    "name": "Phoenix",
+    "manufacturer": "Korg Gadget",
+    "category": "Synth · Wavetable",
+    "subcategory": "Modern Hybrid",
+    "desc": "Wavetable polysynth"
+  },
+  {
+    "name": "Kiev",
+    "manufacturer": "Korg Gadget",
+    "category": "Synth · Wavetable",
+    "subcategory": "Modern Hybrid",
+    "desc": "Wavetable / FM hybrid"
+  },
+  {
+    "name": "Kamata",
+    "manufacturer": "Korg Gadget",
+    "category": "Synth · Wavetable",
+    "subcategory": "Modern Hybrid",
+    "desc": "Volca FM-style wavetable"
+  },
+  {
+    "name": "Wolfsburg",
+    "manufacturer": "Korg Gadget",
+    "category": "Synth · Wavetable",
+    "subcategory": "Modern Hybrid",
+    "desc": "Wavetable analog (monologue-style)"
+  },
+  {
+    "name": "BEAM Filter",
+    "manufacturer": "Lunacy Audio",
+    "category": "Synth · Wavetable",
+    "subcategory": "Cinematic Hybrid",
+    "desc": "Cinematic hybrid instrument with sample blending",
+    "also": [
+      "Texture"
+    ]
+  },
+  {
+    "name": "BEAM Haze",
+    "manufacturer": "Lunacy Audio",
+    "category": "Synth · Wavetable",
+    "subcategory": "Cinematic Hybrid",
+    "desc": "Cinematic hybrid instrument with sample blending",
+    "also": [
+      "Texture"
+    ]
+  },
+  {
+    "name": "Absynth 6",
+    "manufacturer": "Native Instruments",
+    "category": "Synth · Wavetable",
+    "subcategory": "Modern Hybrid",
+    "desc": "Semi-modular hybrid/granular/wave-morphing",
+    "also": [
+      "Texture",
+      "Granular"
+    ]
+  },
+  {
+    "name": "Massive X",
+    "manufacturer": "Native Instruments",
+    "category": "Synth · Wavetable",
+    "subcategory": "Modern Hybrid",
+    "desc": "Wavetable-heavy flagship synth"
+  },
+  {
+    "name": "Reaktor 6",
+    "manufacturer": "Native Instruments",
+    "category": "Synth · Wavetable",
+    "subcategory": "Modular",
+    "desc": "Modular synth environment — anything goes",
+    "also": [
+      "Multi-FX"
+    ]
+  },
+  {
+    "name": "TugImgSynth",
+    "manufacturer": "2Rule",
+    "category": "Synth · Wavetable",
+    "subcategory": "Experimental",
+    "desc": "Free image-to-wavetable synth (drag an image, generates wavetables)"
+  },
+  {
+    "name": "DX7 V",
+    "manufacturer": "Arturia",
+    "category": "Synth · FM",
+    "subcategory": "Vintage FM",
+    "desc": "Yamaha DX7 6-operator FM"
+  },
+  {
+    "name": "Pivot-Lite",
+    "manufacturer": "Fors",
+    "category": "Synth · FM",
+    "subcategory": "Modern FM",
+    "desc": "Free 2-operator FM synth, minimalist UI"
+  },
+  {
+    "name": "Amsterdam",
+    "manufacturer": "Korg Gadget",
+    "category": "Synth · FM",
+    "subcategory": "Vintage FM",
+    "desc": "DX7-style FM synth"
+  },
+  {
+    "name": "Madrid",
+    "manufacturer": "Korg Gadget",
+    "category": "Synth · FM",
+    "subcategory": "Modern FM",
+    "desc": "FM bass"
+  },
+  {
+    "name": "Vapor Keys",
+    "manufacturer": "Karanyi Sounds",
+    "category": "Synth · FM",
+    "subcategory": "FM Keys",
+    "desc": "FM-flavoured dreamy keys",
+    "also": [
+      "Keys"
+    ]
+  },
+  {
+    "name": "Solstice",
+    "manufacturer": "Minuit One",
+    "category": "Synth · Spectral",
+    "subcategory": "Spectral",
+    "desc": "Spectral synth: drops samples on a 2D playable map, similar timbres cluster, play it like an instrument",
+    "also": [
+      "Texture"
+    ]
+  },
+  {
+    "name": "Verv",
+    "manufacturer": "Cabbage Audio (Puremagnetik)",
+    "category": "Synth · Spectral",
+    "subcategory": "String Machine",
+    "desc": "String-machine/Mellotron-style synth with tape-bake degradation",
+    "also": [
+      "Texture",
+      "Keys"
+    ]
+  },
+  {
+    "name": "PaulXStretch",
+    "manufacturer": "Sonosaurus",
+    "category": "Synth · Spectral",
+    "subcategory": "Timestretch",
+    "desc": "Extreme timestretch tool — used as a synth-generator when fed source material",
+    "also": [
+      "Creative"
+    ]
+  },
+  {
+    "name": "GrainStrain",
+    "manufacturer": "Full Bucket Music",
+    "category": "Synth · Spectral",
+    "subcategory": "Granular",
+    "desc": "Free granular synth",
+    "also": [
+      "Texture"
+    ]
+  },
+  {
+    "name": "Descent",
+    "manufacturer": "Audio Damage",
+    "category": "Synth · Spectral",
+    "subcategory": "Granular",
+    "desc": "Granular synth",
+    "also": [
+      "Texture"
+    ]
+  },
+  {
+    "name": "Analog Lab V",
+    "manufacturer": "Arturia",
+    "category": "Sampler",
+    "subcategory": "Sample Player",
+    "desc": "Browser/player for V Collection presets"
+  },
+  {
+    "name": "Emulator II V",
+    "manufacturer": "Arturia",
+    "category": "Sampler",
+    "subcategory": "Vintage Sampler",
+    "desc": "E-mu Emulator II 8-bit sampler"
+  },
+  {
+    "name": "Vaults",
+    "manufacturer": "Crow Hill Company",
+    "category": "Sampler",
+    "subcategory": "Cinematic",
+    "desc": "Sample-based cinematic instrument"
+  },
+  {
+    "name": "DecentSampler",
+    "manufacturer": "decided.ly",
+    "category": "Sampler",
+    "subcategory": "Sampler Engine",
+    "desc": "Free sample player engine"
+  },
+  {
+    "name": "SpaceWalk",
+    "manufacturer": "Higher Plane",
+    "category": "Sampler",
+    "subcategory": "Sample Library",
+    "desc": "Sample-based instrument"
+  },
+  {
+    "name": "SampleTank 4",
+    "manufacturer": "IK Multimedia",
+    "category": "Sampler",
+    "subcategory": "Sampler Engine",
+    "desc": "Flagship multi-format sample workstation",
+    "also": [
+      "Texture"
+    ]
+  },
+  {
+    "name": "SampleTron 2",
+    "manufacturer": "IK Multimedia",
+    "category": "Sampler",
+    "subcategory": "Vintage Sampler",
+    "desc": "Mellotron/Chamberlin sampler emulation",
+    "also": [
+      "Keys"
+    ]
+  },
+  {
+    "name": "Philharmonik 2",
+    "manufacturer": "IK Multimedia",
+    "category": "Sampler",
+    "subcategory": "Orchestral",
+    "desc": "Orchestral sample library player"
+  },
+  {
+    "name": "Montreal",
+    "manufacturer": "Korg Gadget",
+    "category": "Sampler",
+    "subcategory": "Sample Library",
+    "desc": "Module-based ROMpler"
+  },
+  {
+    "name": "Milpitas",
+    "manufacturer": "Korg Gadget",
+    "category": "Sampler",
+    "subcategory": "Sample Library",
+    "desc": "Module-based ROMpler"
+  },
+  {
+    "name": "Salzburg",
+    "manufacturer": "Korg Gadget",
+    "category": "Sampler",
+    "subcategory": "Sample Library",
+    "desc": "Module-based ROMpler"
+  },
+  {
+    "name": "AbuDhabi",
+    "manufacturer": "Korg Gadget",
+    "category": "Sampler",
+    "subcategory": "Sample Library",
+    "desc": "Module-based ROMpler"
+  },
+  {
+    "name": "Zurich",
+    "manufacturer": "Korg Gadget",
+    "category": "Sampler",
+    "subcategory": "Sample Library",
+    "desc": "Module-based ROMpler"
+  },
+  {
+    "name": "Glasgow",
+    "manufacturer": "Korg Gadget",
+    "category": "Sampler",
+    "subcategory": "Sample Library",
+    "desc": "PCM ROMpler"
+  },
+  {
+    "name": "Kontakt 7",
+    "manufacturer": "Native Instruments",
+    "category": "Sampler",
+    "subcategory": "Sampler Engine",
+    "desc": "Industry-standard sampler engine"
+  },
+  {
+    "name": "Kontakt 8",
+    "manufacturer": "Native Instruments",
+    "category": "Sampler",
+    "subcategory": "Sampler Engine",
+    "desc": "Industry-standard sampler engine (latest)"
+  },
+  {
+    "name": "Kontakt (legacy)",
+    "manufacturer": "Native Instruments",
+    "category": "Sampler",
+    "subcategory": "Sampler Engine",
+    "desc": "Older Kontakt build for compatibility"
+  },
+  {
+    "name": "LABS",
+    "manufacturer": "Spitfire Audio",
+    "category": "Sampler",
+    "subcategory": "Sample Library",
+    "desc": "Free sampled instruments collection (huge variety)"
+  },
+  {
+    "name": "Solar",
+    "manufacturer": "Spitfire Audio",
+    "category": "Sampler",
+    "subcategory": "Sampler Engine",
+    "desc": "Sound-blending creative sample instrument (player engine)"
+  },
+  {
+    "name": "BBC Symphony Orchestra",
+    "manufacturer": "Spitfire Audio",
+    "category": "Sampler",
+    "subcategory": "Orchestral",
+    "desc": "Full orchestral library"
+  },
+  {
+    "name": "Prototype Dusty Felts",
+    "manufacturer": "Spitfire Audio",
+    "category": "Sampler",
+    "subcategory": "Sample Library",
+    "desc": "Sampled felt-muted piano",
+    "also": [
+      "Keys"
+    ]
+  },
+  {
+    "name": "Prototype Meyer Choir",
+    "manufacturer": "Spitfire Audio",
+    "category": "Sampler",
+    "subcategory": "Sample Library",
+    "desc": "Sampled choir"
+  },
+  {
+    "name": "Prototype Rubber Bridge",
+    "manufacturer": "Spitfire Audio",
+    "category": "Sampler",
+    "subcategory": "Sample Library",
+    "desc": "Sampled rubber-bridge guitar"
+  },
+  {
+    "name": "INSTRUMENT",
+    "manufacturer": "Splice",
+    "category": "Sampler",
+    "subcategory": "Sample Player",
+    "desc": "Splice sample browser/loader"
+  },
+  {
+    "name": "Sounds",
+    "manufacturer": "Splice",
+    "category": "Sampler",
+    "subcategory": "Sample Player",
+    "desc": "Splice sample library access"
+  },
+  {
+    "name": "Sounds Listener",
+    "manufacturer": "Splice",
+    "category": "Sampler",
+    "subcategory": "Sample Player",
+    "desc": "Splice audio listener helper"
+  },
+  {
+    "name": "Bridge",
+    "manufacturer": "Splice",
+    "category": "Sampler",
+    "subcategory": "Sample Player",
+    "desc": "Splice routing utility",
+    "also": [
+      "Utility"
+    ]
+  },
+  {
+    "name": "SynfulOrchestra",
+    "manufacturer": "Synful",
+    "category": "Sampler",
+    "subcategory": "Orchestral",
+    "desc": "Reconstructive Phrase Modeling orchestral synthesis"
+  },
+  {
+    "name": "Unison Zen Master",
+    "manufacturer": "Unison Audio",
+    "category": "Sampler",
+    "subcategory": "Sample Library",
+    "desc": "Sample-based instrument"
+  },
+  {
+    "name": "UVIWorkstation",
+    "manufacturer": "UVI",
+    "category": "Sampler",
+    "subcategory": "Sampler Engine",
+    "desc": "Free sample-engine player for UVI libraries"
+  },
+  {
+    "name": "Triaz Player",
+    "manufacturer": "Wave Alchemy",
+    "category": "Sampler",
+    "subcategory": "Sample Library",
+    "desc": "Triaz drum sampler engine"
+  },
+  {
+    "name": "Tekno",
+    "manufacturer": "Baby Audio",
+    "category": "Drum Machine",
+    "subcategory": "Drum Synth",
+    "desc": "18-engine analog-modelled drum synth (real-time generation, not samples)"
+  },
+  {
+    "name": "MODO DRUM",
+    "manufacturer": "IK Multimedia",
+    "category": "Drum Machine",
+    "subcategory": "Modelled Drums",
+    "desc": "Physically modelled drum kit"
+  },
+  {
+    "name": "Bilbao",
+    "manufacturer": "Korg Gadget",
+    "category": "Drum Machine",
+    "subcategory": "Drum Synth",
+    "desc": "Drum machine (Volca Beats style)"
+  },
+  {
+    "name": "Gladstone",
+    "manufacturer": "Korg Gadget",
+    "category": "Drum Machine",
+    "subcategory": "Drum Synth",
+    "desc": "Drum machine"
+  },
+  {
+    "name": "London",
+    "manufacturer": "Korg Gadget",
+    "category": "Drum Machine",
+    "subcategory": "Drum Synth",
+    "desc": "Drum/percussion gadget"
+  },
+  {
+    "name": "Recife",
+    "manufacturer": "Korg Gadget",
+    "category": "Drum Machine",
+    "subcategory": "Sampled Drums",
+    "desc": "Latin percussion drum machine"
+  },
+  {
+    "name": "Stockholm",
+    "manufacturer": "Korg Gadget",
+    "category": "Drum Machine",
+    "subcategory": "Drum Synth",
+    "desc": "Drum machine"
+  },
+  {
+    "name": "Tokyo",
+    "manufacturer": "Korg Gadget",
+    "category": "Drum Machine",
+    "subcategory": "Drum Synth",
+    "desc": "Drum machine (FM/PCM percussion)"
+  },
+  {
+    "name": "Battery 4",
+    "manufacturer": "Native Instruments",
+    "category": "Drum Machine",
+    "subcategory": "Sampled Drums",
+    "desc": "Sample-based drum cell sampler"
+  },
+  {
+    "name": "80s Soviet Drums",
+    "manufacturer": "SampleScience",
+    "category": "Drum Machine",
+    "subcategory": "Sampled Drums",
+    "desc": "Soviet-era drum machine samples"
+  },
+  {
+    "name": "XO",
+    "manufacturer": "XLN Audio",
+    "category": "Drum Machine",
+    "subcategory": "Sampled Drums",
+    "desc": "AI-organised drum sampler"
+  },
+  {
+    "name": "Lounge Lizard Session 4",
+    "manufacturer": "AAS",
+    "category": "Acoustic/Modelled",
+    "subcategory": "Electric Pianos",
+    "desc": "Modelled Rhodes / Wurli electric pianos",
+    "also": [
+      "Keys"
+    ]
+  },
+  {
+    "name": "Strum Session 2",
+    "manufacturer": "AAS",
+    "category": "Acoustic/Modelled",
+    "subcategory": "Guitar",
+    "desc": "Modelled acoustic & electric guitar/strum"
+  },
+  {
+    "name": "Augmented BRASS",
+    "manufacturer": "Arturia",
+    "category": "Acoustic/Modelled",
+    "subcategory": "Brass",
+    "desc": "Hybrid sample-plus-synth brass"
+  },
+  {
+    "name": "Augmented GRAND PIANO",
+    "manufacturer": "Arturia",
+    "category": "Acoustic/Modelled",
+    "subcategory": "Piano",
+    "desc": "Hybrid sampled piano",
+    "also": [
+      "Keys"
+    ]
+  },
+  {
+    "name": "Augmented MALLETS",
+    "manufacturer": "Arturia",
+    "category": "Acoustic/Modelled",
+    "subcategory": "Mallets/Percussion",
+    "desc": "Hybrid sample-plus-synth mallets"
+  },
+  {
+    "name": "Augmented STRINGS",
+    "manufacturer": "Arturia",
+    "category": "Acoustic/Modelled",
+    "subcategory": "Strings",
+    "desc": "Hybrid sample-plus-synth strings"
+  },
+  {
+    "name": "Augmented VOICES",
+    "manufacturer": "Arturia",
+    "category": "Acoustic/Modelled",
+    "subcategory": "Voice",
+    "desc": "Hybrid sample-plus-synth voices"
+  },
+  {
+    "name": "Augmented WOODWINDS",
+    "manufacturer": "Arturia",
+    "category": "Acoustic/Modelled",
+    "subcategory": "Woodwinds",
+    "desc": "Hybrid sample-plus-synth woodwinds"
+  },
+  {
+    "name": "Augmented YANGTZE",
+    "manufacturer": "Arturia",
+    "category": "Acoustic/Modelled",
+    "subcategory": "World/Ethnic",
+    "desc": "Hybrid Chinese acoustic textures"
+  },
+  {
+    "name": "Mix DRUMS",
+    "manufacturer": "Arturia",
+    "category": "Acoustic/Modelled",
+    "subcategory": "Mallets/Percussion",
+    "desc": "Drum sample collection"
+  },
+  {
+    "name": "Piano V3",
+    "manufacturer": "Arturia",
+    "category": "Acoustic/Modelled",
+    "subcategory": "Piano",
+    "desc": "Modelled grand pianos",
+    "also": [
+      "Keys"
+    ]
+  },
+  {
+    "name": "Hammond B-3X",
+    "manufacturer": "IK Multimedia",
+    "category": "Acoustic/Modelled",
+    "subcategory": "Organ",
+    "desc": "Modelled Hammond organ",
+    "also": [
+      "Keys"
+    ]
+  },
+  {
+    "name": "MODO BASS 2",
+    "manufacturer": "IK Multimedia",
+    "category": "Acoustic/Modelled",
+    "subcategory": "Bass",
+    "desc": "Physically modelled electric bass",
+    "also": [
+      "Bass"
+    ]
+  },
+  {
+    "name": "Polyscape Nova",
+    "manufacturer": "Karanyi Sounds",
+    "category": "Acoustic/Modelled",
+    "subcategory": "Cinematic",
+    "desc": "Cinematic textured hybrid instrument",
+    "also": [
+      "Texture"
+    ]
+  },
+  {
+    "name": "Polyscape Analog",
+    "manufacturer": "Karanyi Sounds",
+    "category": "Acoustic/Modelled",
+    "subcategory": "Cinematic",
+    "desc": "Cinematic textured hybrid instrument",
+    "also": [
+      "Texture"
+    ]
+  },
+  {
+    "name": "B-3 V2",
+    "manufacturer": "Arturia",
+    "category": "Keys",
+    "subcategory": "Organ",
+    "desc": "Hammond B-3 organ"
+  },
+  {
+    "name": "Clavinet V",
+    "manufacturer": "Arturia",
+    "category": "Keys",
+    "subcategory": "Clavinet",
+    "desc": "Hohner Clavinet D6"
+  },
+  {
+    "name": "CP-70 V",
+    "manufacturer": "Arturia",
+    "category": "Keys",
+    "subcategory": "Electric Piano",
+    "desc": "Yamaha CP-70 electric grand"
+  },
+  {
+    "name": "Farfisa V",
+    "manufacturer": "Arturia",
+    "category": "Keys",
+    "subcategory": "Organ",
+    "desc": "Farfisa Compact combo organ"
+  },
+  {
+    "name": "Mellotron V",
+    "manufacturer": "Arturia",
+    "category": "Keys",
+    "subcategory": "Tape Keyboard",
+    "desc": "Mellotron sample-replay tapes"
+  },
+  {
+    "name": "Stage-73 V2",
+    "manufacturer": "Arturia",
+    "category": "Keys",
+    "subcategory": "Electric Piano",
+    "desc": "Rhodes Stage 73"
+  },
+  {
+    "name": "VOX Continental V2",
+    "manufacturer": "Arturia",
+    "category": "Keys",
+    "subcategory": "Organ",
+    "desc": "Vox Continental organ"
+  },
+  {
+    "name": "Wurli V2",
+    "manufacturer": "Arturia",
+    "category": "Keys",
+    "subcategory": "Electric Piano",
+    "desc": "Wurlitzer 200A electric piano"
+  },
+  {
+    "name": "Wurli V3",
+    "manufacturer": "Arturia",
+    "category": "Keys",
+    "subcategory": "Electric Piano",
+    "desc": "Wurlitzer 200A (latest)"
+  },
+  {
+    "name": "Lofi Keys 2",
+    "manufacturer": "Karanyi Sounds",
+    "category": "Keys",
+    "subcategory": "Lo-fi Keys",
+    "desc": "Lo-fi keys collection"
+  },
+  {
+    "name": "Electric Keys",
+    "manufacturer": "Karanyi Sounds",
+    "category": "Keys",
+    "subcategory": "Electric Piano",
+    "desc": "Iconic FM keys (DX7 Rhodes territory)"
+  },
+  {
+    "name": "Firenze",
+    "manufacturer": "Korg Gadget",
+    "category": "Keys",
+    "subcategory": "Clavinet",
+    "desc": "Clavinet emulation"
+  },
+  {
+    "name": "Darwin",
+    "manufacturer": "Korg Gadget",
+    "category": "Keys",
+    "subcategory": "ROMpler Keys",
+    "desc": "Korg M1 PCM ROMpler"
+  },
+  {
+    "name": "Acid V",
+    "manufacturer": "Arturia",
+    "category": "Bass/Guitar",
+    "subcategory": "Bass Synth",
+    "desc": "Roland TB-303 acid bass"
+  },
+  {
+    "name": "Minipol",
+    "manufacturer": "Karanyi Sounds",
+    "category": "Bass/Guitar",
+    "subcategory": "Bass Synth",
+    "desc": "Analog bass synth"
+  },
+  {
+    "name": "Chicago",
+    "manufacturer": "Korg Gadget",
+    "category": "Bass/Guitar",
+    "subcategory": "Bass Synth",
+    "desc": "Mono bass synth (Volca Bass style)"
+  },
+  {
+    "name": "Dublin",
+    "manufacturer": "Korg Gadget",
+    "category": "Bass/Guitar",
+    "subcategory": "Bass Synth",
+    "desc": "Bass synth"
+  },
+  {
+    "name": "Miami",
+    "manufacturer": "Korg Gadget",
+    "category": "Bass/Guitar",
+    "subcategory": "Bass Synth",
+    "desc": "Saw bass synth"
+  },
+  {
+    "name": "Rosario",
+    "manufacturer": "Korg Gadget",
+    "category": "Bass/Guitar",
+    "subcategory": "Modelled Bass",
+    "desc": "Modelled bass guitar (acoustic/electric)"
+  },
+  {
+    "name": "Mariana",
+    "manufacturer": "Moog Music",
+    "category": "Bass/Guitar",
+    "subcategory": "Bass Synth",
+    "desc": "Parallel-routed Moog bass synth"
+  },
+  {
+    "name": "Vocoder V",
+    "manufacturer": "Arturia",
+    "category": "Vocal Instrument",
+    "subcategory": "Vocoder",
+    "desc": "Vocoder"
+  },
+  {
+    "name": "Soundbox",
+    "manufacturer": "Audiomodern",
+    "category": "Vocal Instrument",
+    "subcategory": "Sampled Vocal",
+    "desc": "Sample-based instrument (vocal/textural with expansions)",
+    "also": [
+      "Texture"
+    ]
+  },
+  {
+    "name": "Parallax",
+    "manufacturer": "MoonwaveFX",
+    "category": "Vocal Instrument",
+    "subcategory": "Voice Processor",
+    "desc": "Vocal/instrument processor",
+    "also": [
+      "Creative"
+    ]
+  },
+  {
+    "name": "Expanse",
+    "manufacturer": "Cabbage Audio (Puremagnetik)",
+    "category": "Texture",
+    "subcategory": "Drone/Noise",
+    "desc": "Free texture generator: filtered noise + pitch-shifted blurred layer"
+  },
+  {
+    "name": "Swarm",
+    "manufacturer": "Cabbage Audio (Puremagnetik)",
+    "category": "Texture",
+    "subcategory": "Granular Cloud",
+    "desc": "Free particle-diffusion sound-design instrument (Xenakis-inspired clouds)"
+  },
+  {
+    "name": "Bloom Mura Masa",
+    "manufacturer": "ExciteAudio",
+    "category": "Texture",
+    "subcategory": "Cinematic",
+    "desc": "Cinematic textural instrument"
+  },
+  {
+    "name": "Midnite",
+    "manufacturer": "Karanyi Sounds",
+    "category": "Texture",
+    "subcategory": "Cinematic",
+    "desc": "Hybrid cinematic synth"
+  },
+  {
+    "name": "Raum",
+    "manufacturer": "Native Instruments",
+    "category": "Texture",
+    "subcategory": "Cinematic",
+    "desc": "Free reverb capable of pad-instrument tones",
+    "also": [
+      "Reverb"
+    ]
+  },
+  {
+    "name": "Morpho",
+    "manufacturer": "Neutone",
+    "category": "Texture",
+    "subcategory": "Neural",
+    "desc": "Neural sound-morphing instrument",
+    "also": [
+      "Creative"
+    ]
+  },
+  {
+    "name": "The Sword",
+    "manufacturer": "Audiority",
+    "category": "Other Instrument",
+    "subcategory": "Guitar Synth",
+    "desc": "Synth instrument",
+    "also": [
+      "Guitar"
+    ]
+  },
+  {
+    "name": "BucketOne",
+    "manufacturer": "Full Bucket Music",
+    "category": "Other Instrument",
+    "subcategory": "Vintage Emulation",
+    "desc": "Free Korg Poly-61 emulation"
+  },
+  {
+    "name": "BucketPops",
+    "manufacturer": "Full Bucket Music",
+    "category": "Other Instrument",
+    "subcategory": "Vintage Emulation",
+    "desc": "Free pop sound-set instrument"
+  },
+  {
+    "name": "Nabla",
+    "manufacturer": "Full Bucket Music",
+    "category": "Other Instrument",
+    "subcategory": "Vintage Emulation",
+    "desc": "Free Korg Delta strings/poly emulation"
+  },
+  {
+    "name": "NY",
+    "manufacturer": "Full Bucket Music",
+    "category": "Other Instrument",
+    "subcategory": "Vintage Emulation",
+    "desc": "Free Korg Mono/Poly emulation"
+  },
+  {
+    "name": "PECS",
+    "manufacturer": "Full Bucket Music",
+    "category": "Other Instrument",
+    "subcategory": "Vintage Emulation",
+    "desc": "Free poly synth"
+  },
+  {
+    "name": "HY-ESG",
+    "manufacturer": "HY Plugins",
+    "category": "Other Instrument",
+    "subcategory": "Sequenced",
+    "desc": "Sequencer/instrument generator",
+    "also": [
+      "MIDI"
+    ]
+  },
+  {
+    "name": "Harmonus_v1",
+    "manufacturer": "Lostin70s",
+    "category": "Other Instrument",
+    "subcategory": "Vintage Emulation",
+    "desc": "Vintage-style instrument"
+  },
+  {
+    "name": "FIN-RETRO",
+    "manufacturer": "UJAM",
+    "category": "Other Instrument",
+    "subcategory": "Retro",
+    "desc": "Retro synth (UJAM Finisher Retro)"
+  },
+  {
+    "name": "Rev INTENSITY",
+    "manufacturer": "Arturia",
+    "category": "Reverb",
+    "subcategory": "Algorithmic / Studio",
+    "desc": "Modern algorithmic, drives and saturates the wet path"
+  },
+  {
+    "name": "Rev LX-24",
+    "manufacturer": "Arturia",
+    "category": "Reverb",
+    "subcategory": "Algorithmic / Studio",
+    "desc": "Lexicon 224 emulation"
+  },
+  {
+    "name": "Rev PLATE-140",
+    "manufacturer": "Arturia",
+    "category": "Reverb",
+    "subcategory": "Algorithmic / Studio",
+    "desc": "EMT 140 plate"
+  },
+  {
+    "name": "Rev SPRING-636",
+    "manufacturer": "Arturia",
+    "category": "Reverb",
+    "subcategory": "Algorithmic / Studio",
+    "desc": "Spring reverb (Grampian 636)"
+  },
+  {
+    "name": "Springs",
+    "manufacturer": "AudioThing",
+    "category": "Reverb",
+    "subcategory": "Algorithmic / Studio",
+    "desc": "Spring reverb"
+  },
+  {
+    "name": "Things Texture",
+    "manufacturer": "AudioThing",
+    "category": "Reverb",
+    "subcategory": "Shimmer / Granular / Creative",
+    "desc": "Convolution textural reverb",
+    "also": [
+      "Texture",
+      "Modulation"
+    ]
+  },
+  {
+    "name": "FogConvolver2",
+    "manufacturer": "AudioThing",
+    "category": "Reverb",
+    "subcategory": "Algorithmic / Studio",
+    "desc": "Convolution reverb (any IR)"
+  },
+  {
+    "name": "Pastfabric2",
+    "manufacturer": "Cabbage Audio (Puremagnetik)",
+    "category": "Reverb",
+    "subcategory": "Shimmer / Granular / Creative",
+    "desc": "Micro-memory splicing granular reverb (real-time buffer-based)",
+    "also": [
+      "Creative",
+      "Granular"
+    ]
+  },
+  {
+    "name": "Sol",
+    "manufacturer": "Dawesome",
+    "category": "Reverb",
+    "subcategory": "Shimmer / Granular / Creative",
+    "desc": "Free granular textural reverb — Clouds engine + glitter/shine/cosmic",
+    "also": [
+      "Texture"
+    ]
+  },
+  {
+    "name": "Temperance Lite",
+    "manufacturer": "Eventide",
+    "category": "Reverb",
+    "subcategory": "Algorithmic / Studio",
+    "desc": "Free ambient reverb"
+  },
+  {
+    "name": "CSR Hall",
+    "manufacturer": "IK Multimedia",
+    "category": "Reverb",
+    "subcategory": "Algorithmic / Studio",
+    "desc": "Studio-grade hall (T-RackS)"
+  },
+  {
+    "name": "CSR Plate",
+    "manufacturer": "IK Multimedia",
+    "category": "Reverb",
+    "subcategory": "Algorithmic / Studio",
+    "desc": "Studio plate (T-RackS)"
+  },
+  {
+    "name": "CSR Room",
+    "manufacturer": "IK Multimedia",
+    "category": "Reverb",
+    "subcategory": "Algorithmic / Studio",
+    "desc": "Studio room (T-RackS)"
+  },
+  {
+    "name": "CSR Inverse",
+    "manufacturer": "IK Multimedia",
+    "category": "Reverb",
+    "subcategory": "Shimmer / Granular / Creative",
+    "desc": "Inverse/reverse reverb (T-RackS)"
+  },
+  {
+    "name": "Fame Studio Reverb",
+    "manufacturer": "IK Multimedia",
+    "category": "Reverb",
+    "subcategory": "Algorithmic / Studio",
+    "desc": "Classic studio room emulation (T-RackS)"
+  },
+  {
+    "name": "Sunset Sound Studio Reverb",
+    "manufacturer": "IK Multimedia",
+    "category": "Reverb",
+    "subcategory": "Algorithmic / Studio",
+    "desc": "Famous room emulation (T-RackS)"
+  },
+  {
+    "name": "The Farm Stone Room",
+    "manufacturer": "IK Multimedia",
+    "category": "Reverb",
+    "subcategory": "Algorithmic / Studio",
+    "desc": "Live room emulation (T-RackS)"
+  },
+  {
+    "name": "Reverb",
+    "manufacturer": "kiloHearts",
+    "category": "Reverb",
+    "subcategory": "Algorithmic / Studio",
+    "desc": "Modular reverb module"
+  },
+  {
+    "name": "R0Verb",
+    "manufacturer": "Klevgrand",
+    "category": "Reverb",
+    "subcategory": "Algorithmic / Studio",
+    "desc": "Compact algorithmic reverb"
+  },
+  {
+    "name": "DevilSpring1",
+    "manufacturer": "Lostin70s",
+    "category": "Reverb",
+    "subcategory": "Algorithmic / Studio",
+    "desc": "Vintage spring-style ambience"
+  },
+  {
+    "name": "EC300",
+    "manufacturer": "McDSP",
+    "category": "Reverb",
+    "subcategory": "Algorithmic / Studio",
+    "desc": "Echo Collection 300 mastering reverb/echo",
+    "also": [
+      "Delay"
+    ]
+  },
+  {
+    "name": "Little Plate",
+    "manufacturer": "Soundtoys",
+    "category": "Reverb",
+    "subcategory": "Algorithmic / Studio",
+    "desc": "EMT 140 plate reverb"
+  },
+  {
+    "name": "SpaceBlender",
+    "manufacturer": "Soundtoys",
+    "category": "Reverb",
+    "subcategory": "Shimmer / Granular / Creative",
+    "desc": "Wash/atmospheric reverb",
+    "also": [
+      "Texture"
+    ]
+  },
+  {
+    "name": "Spacer",
+    "manufacturer": "Spectral Plugins",
+    "category": "Reverb",
+    "subcategory": "Shimmer / Granular / Creative",
+    "desc": "Creative reverb processor"
+  },
+  {
+    "name": "AirMusic",
+    "manufacturer": "Sound Particles",
+    "category": "Reverb",
+    "subcategory": "Sound Design",
+    "desc": "Air movement / spatial generator",
+    "also": [
+      "Modulation"
+    ]
+  },
+  {
+    "name": "Reverb",
+    "manufacturer": "ToneBoosters",
+    "category": "Reverb",
+    "subcategory": "Algorithmic / Studio",
+    "desc": "Algorithmic reverb"
+  },
+  {
+    "name": "Pure Plate",
+    "manufacturer": "UAD",
+    "category": "Reverb",
+    "subcategory": "Algorithmic / Studio",
+    "desc": "EMT 140 plate emulation"
+  },
+  {
+    "name": "ValhallaSupermassive",
+    "manufacturer": "Valhalla DSP",
+    "category": "Reverb",
+    "subcategory": "Shimmer / Granular / Creative",
+    "desc": "Free massive ambient/delay-reverb hybrid",
+    "also": [
+      "Delay"
+    ]
+  },
+  {
+    "name": "Delay BRIGADE",
+    "manufacturer": "Arturia",
+    "category": "Delay",
+    "subcategory": "Standard Tempo-Synced",
+    "desc": "BBD analog bucket-brigade"
+  },
+  {
+    "name": "Delay ETERNITY",
+    "manufacturer": "Arturia",
+    "category": "Delay",
+    "subcategory": "Standard Tempo-Synced",
+    "desc": "Digital studio delay (Eventide H3000 inspired)"
+  },
+  {
+    "name": "Delay TAPE-201",
+    "manufacturer": "Arturia",
+    "category": "Delay",
+    "subcategory": "Tape Echo",
+    "desc": "Roland Space Echo RE-201"
+  },
+  {
+    "name": "Comeback Kid",
+    "manufacturer": "Baby Audio",
+    "category": "Delay",
+    "subcategory": "Standard Tempo-Synced",
+    "desc": "Analog-flavoured delay with tape/reverb/swirl colourings"
+  },
+  {
+    "name": "Driftmaker",
+    "manufacturer": "Cabbage Audio (Puremagnetik)",
+    "category": "Delay",
+    "subcategory": "Creative / Glitch / Granular",
+    "desc": "Free delay disintegration with analog deterioration on echoes"
+  },
+  {
+    "name": "Partikl",
+    "manufacturer": "Cabbage Audio (Puremagnetik)",
+    "category": "Delay",
+    "subcategory": "Creative / Glitch / Granular",
+    "desc": "Granular delay & temporal shifter",
+    "also": [
+      "Granular"
+    ]
+  },
+  {
+    "name": "MimikOD",
+    "manufacturer": "Cabbage Audio (Puremagnetik)",
+    "category": "Delay",
+    "subcategory": "Creative / Glitch / Granular",
+    "desc": "Pitch & time repeater with overdrive",
+    "also": [
+      "Pitch"
+    ]
+  },
+  {
+    "name": "RippleDelayFree",
+    "manufacturer": "Davisynth",
+    "category": "Delay",
+    "subcategory": "Creative / Glitch / Granular",
+    "desc": "Free creative delay"
+  },
+  {
+    "name": "Hysteresis",
+    "manufacturer": "Glitchmachines",
+    "category": "Delay",
+    "subcategory": "Creative / Glitch / Granular",
+    "desc": "Free glitch delay: feedback + stutter + lowpass + modulation",
+    "also": [
+      "Creative"
+    ]
+  },
+  {
+    "name": "Space Delay",
+    "manufacturer": "IK Multimedia",
+    "category": "Delay",
+    "subcategory": "Tape Echo",
+    "desc": "Tape echo / space echo emulation (T-RackS)"
+  },
+  {
+    "name": "Tape Echo",
+    "manufacturer": "IK Multimedia",
+    "category": "Delay",
+    "subcategory": "Tape Echo",
+    "desc": "Tape echo emulation (T-RackS)"
+  },
+  {
+    "name": "Matra",
+    "manufacturer": "Karanyi Sounds",
+    "category": "Delay",
+    "subcategory": "Creative / Glitch / Granular",
+    "desc": "Dual-engine resonant delay with Wash/reverb/grain blend and Smart Random",
+    "also": [
+      "Reverb",
+      "Creative"
+    ]
+  },
+  {
+    "name": "Delay",
+    "manufacturer": "kiloHearts",
+    "category": "Delay",
+    "subcategory": "Standard Tempo-Synced",
+    "desc": "Modular delay module"
+  },
+  {
+    "name": "Dual Delay",
+    "manufacturer": "kiloHearts",
+    "category": "Delay",
+    "subcategory": "Standard Tempo-Synced",
+    "desc": "Modular dual delay"
+  },
+  {
+    "name": "Replika",
+    "manufacturer": "Native Instruments",
+    "category": "Delay",
+    "subcategory": "Standard Tempo-Synced",
+    "desc": "Free delay (modern, vintage, diffuse, analog modes)"
+  },
+  {
+    "name": "Gem ECHOSON",
+    "manufacturer": "Overloud",
+    "category": "Delay",
+    "subcategory": "Tape Echo",
+    "desc": "Binson Echorec disc-echo emulation"
+  },
+  {
+    "name": "EchoBoy Jr.",
+    "manufacturer": "Soundtoys",
+    "category": "Delay",
+    "subcategory": "Tape Echo",
+    "desc": "Simplified EchoBoy (tape/vintage delay)"
+  },
+  {
+    "name": "Little PrimalTap",
+    "manufacturer": "Soundtoys",
+    "category": "Delay",
+    "subcategory": "Standard Tempo-Synced",
+    "desc": "Lexicon PCM 42 emulation"
+  },
+  {
+    "name": "TIME-12",
+    "manufacturer": "Tilr",
+    "category": "Delay",
+    "subcategory": "Creative / Glitch / Granular",
+    "desc": "Vintage 12-bit delay"
+  },
+  {
+    "name": "TimeMachine",
+    "manufacturer": "ToneBoosters",
+    "category": "Delay",
+    "subcategory": "Creative / Glitch / Granular",
+    "desc": "Pitch/time delay"
+  },
+  {
+    "name": "TugPhonon",
+    "manufacturer": "2Rule",
+    "category": "Delay",
+    "subcategory": "Tape Echo",
+    "desc": "Free vintage rotating tape delay — 8 playback heads on virtual magnetic disk (Schaeffer-style)",
+    "also": [
+      "Reverb"
+    ]
+  },
+  {
+    "name": "Galaxy Tape Echo",
+    "manufacturer": "UAD",
+    "category": "Delay",
+    "subcategory": "Tape Echo",
+    "desc": "Roland Space Echo emulation"
+  },
+  {
+    "name": "ValhallaFreqEcho",
+    "manufacturer": "Valhalla DSP",
+    "category": "Delay",
+    "subcategory": "Creative / Glitch / Granular",
+    "desc": "Frequency-shifted delay (Bode Frequency Shifter style)"
+  },
+  {
+    "name": "ValhallaSpaceModulator",
+    "manufacturer": "Valhalla DSP",
+    "category": "Delay",
+    "subcategory": "Creative / Glitch / Granular",
+    "desc": "Free flanger/chorus/echo hybrid",
+    "also": [
+      "Modulation"
+    ]
+  },
+  {
+    "name": "EQ SITRAL-295",
+    "manufacturer": "Arturia",
+    "category": "EQ",
+    "subcategory": "Studio / Mixing",
+    "desc": "Siemens W295 module EQ"
+  },
+  {
+    "name": "Classic EQ",
+    "manufacturer": "IK Multimedia",
+    "category": "EQ",
+    "subcategory": "Studio / Mixing",
+    "desc": "Pultec-style passive EQ (T-RackS)"
+  },
+  {
+    "name": "EQ-73",
+    "manufacturer": "IK Multimedia",
+    "category": "EQ",
+    "subcategory": "Studio / Mixing",
+    "desc": "Neve 1073 EQ (T-RackS)"
+  },
+  {
+    "name": "EQ-81",
+    "manufacturer": "IK Multimedia",
+    "category": "EQ",
+    "subcategory": "Studio / Mixing",
+    "desc": "Neve 1081 EQ (T-RackS)"
+  },
+  {
+    "name": "EQ-PA",
+    "manufacturer": "IK Multimedia",
+    "category": "EQ",
+    "subcategory": "Studio / Mixing",
+    "desc": "Pultec EQP-1A program EQ (T-RackS)"
+  },
+  {
+    "name": "EQ-PB",
+    "manufacturer": "IK Multimedia",
+    "category": "EQ",
+    "subcategory": "Studio / Mixing",
+    "desc": "Pultec passive EQ (T-RackS)"
+  },
+  {
+    "name": "EQ-PG",
+    "manufacturer": "IK Multimedia",
+    "category": "EQ",
+    "subcategory": "Studio / Mixing",
+    "desc": "Pultec graphic (T-RackS)"
+  },
+  {
+    "name": "EQP-1A",
+    "manufacturer": "IK Multimedia",
+    "category": "EQ",
+    "subcategory": "Studio / Mixing",
+    "desc": "Pultec EQP-1A (T-RackS)"
+  },
+  {
+    "name": "EQual",
+    "manufacturer": "IK Multimedia",
+    "category": "EQ",
+    "subcategory": "Studio / Mixing",
+    "desc": "Modern parametric (T-RackS)"
+  },
+  {
+    "name": "Linear Phase EQ",
+    "manufacturer": "IK Multimedia",
+    "category": "EQ",
+    "subcategory": "Mastering",
+    "desc": "Linear-phase mastering EQ (T-RackS)"
+  },
+  {
+    "name": "Master EQ-432",
+    "manufacturer": "IK Multimedia",
+    "category": "EQ",
+    "subcategory": "Mastering",
+    "desc": "Mastering EQ (T-RackS)"
+  },
+  {
+    "name": "Ozone 11 Equalizer",
+    "manufacturer": "iZotope",
+    "category": "EQ",
+    "subcategory": "Mastering",
+    "desc": "Mastering parametric"
+  },
+  {
+    "name": "3-Band EQ",
+    "manufacturer": "kiloHearts",
+    "category": "EQ",
+    "subcategory": "Studio / Mixing",
+    "desc": "Modular 3-band"
+  },
+  {
+    "name": "Equalizer",
+    "manufacturer": "ToneBoosters",
+    "category": "EQ",
+    "subcategory": "Studio / Mixing",
+    "desc": "Parametric EQ"
+  },
+  {
+    "name": "EZQ",
+    "manufacturer": "ToneBoosters",
+    "category": "EQ",
+    "subcategory": "Studio / Mixing",
+    "desc": "Simple EQ"
+  },
+  {
+    "name": "Things FlipEQ",
+    "manufacturer": "AudioThing",
+    "category": "EQ",
+    "subcategory": "Specialist",
+    "desc": "Mid-side / phase-flippable EQ"
+  },
+  {
+    "name": "ZL Equalizer 2",
+    "manufacturer": "ZL Audio",
+    "category": "EQ",
+    "subcategory": "Studio / Mixing",
+    "desc": "Modern parametric"
+  },
+  {
+    "name": "AIR Multiband Filterbank",
+    "manufacturer": "inMusic",
+    "category": "EQ",
+    "subcategory": "Specialist",
+    "desc": "Multiband filtering as EQ",
+    "also": [
+      "Filter"
+    ]
+  },
+  {
+    "name": "Sonnox Soften",
+    "manufacturer": "Sonnox",
+    "category": "EQ",
+    "subcategory": "Specialist",
+    "desc": "De-harshness / harmonic-softening EQ-like processor"
+  },
+  {
+    "name": "Comp DIODE-609",
+    "manufacturer": "Arturia",
+    "category": "Compressor",
+    "subcategory": "Vintage Hardware",
+    "desc": "Neve 33609 diode bridge"
+  },
+  {
+    "name": "Comp FET-76",
+    "manufacturer": "Arturia",
+    "category": "Compressor",
+    "subcategory": "Vintage Hardware",
+    "desc": "UREI 1176 FET"
+  },
+  {
+    "name": "Comp TUBE-STA",
+    "manufacturer": "Arturia",
+    "category": "Compressor",
+    "subcategory": "Vintage Hardware",
+    "desc": "Tube-Tech CL 1B / Fairchild style"
+  },
+  {
+    "name": "Comp VCA-65",
+    "manufacturer": "Arturia",
+    "category": "Compressor",
+    "subcategory": "Vintage Hardware",
+    "desc": "dbx 165A VCA"
+  },
+  {
+    "name": "Black 76",
+    "manufacturer": "IK Multimedia",
+    "category": "Compressor",
+    "subcategory": "Vintage Hardware",
+    "desc": "1176 emulation (T-RackS)"
+  },
+  {
+    "name": "British Channel",
+    "manufacturer": "IK Multimedia",
+    "category": "Compressor",
+    "subcategory": "Vintage Hardware",
+    "desc": "SSL channel compressor (T-RackS)",
+    "also": [
+      "Channel Strip"
+    ]
+  },
+  {
+    "name": "Bus Compressor",
+    "manufacturer": "IK Multimedia",
+    "category": "Compressor",
+    "subcategory": "Vintage Hardware",
+    "desc": "SSL G-bus compressor (T-RackS)"
+  },
+  {
+    "name": "Classic Comp",
+    "manufacturer": "IK Multimedia",
+    "category": "Compressor",
+    "subcategory": "Vintage Hardware",
+    "desc": "Vintage compressor (T-RackS)"
+  },
+  {
+    "name": "Comprexxor",
+    "manufacturer": "IK Multimedia",
+    "category": "Compressor",
+    "subcategory": "Vintage Hardware",
+    "desc": "Vari-Mu emulation (T-RackS)"
+  },
+  {
+    "name": "Dyna-Mu",
+    "manufacturer": "IK Multimedia",
+    "category": "Compressor",
+    "subcategory": "Vintage Hardware",
+    "desc": "Manley Vari-Mu (T-RackS)"
+  },
+  {
+    "name": "Opto Comp",
+    "manufacturer": "IK Multimedia",
+    "category": "Compressor",
+    "subcategory": "Vintage Hardware",
+    "desc": "LA-2A optical (T-RackS)"
+  },
+  {
+    "name": "Precision Comp-Limiter",
+    "manufacturer": "IK Multimedia",
+    "category": "Compressor",
+    "subcategory": "Modern / Multiband",
+    "desc": "Mastering comp (T-RackS)"
+  },
+  {
+    "name": "Quad Compressor",
+    "manufacturer": "IK Multimedia",
+    "category": "Compressor",
+    "subcategory": "Modern / Multiband",
+    "desc": "4-band mastering comp (T-RackS)"
+  },
+  {
+    "name": "VC-670",
+    "manufacturer": "IK Multimedia",
+    "category": "Compressor",
+    "subcategory": "Vintage Hardware",
+    "desc": "Fairchild 670 (T-RackS)"
+  },
+  {
+    "name": "White 2A",
+    "manufacturer": "IK Multimedia",
+    "category": "Compressor",
+    "subcategory": "Vintage Hardware",
+    "desc": "LA-2A optical (T-RackS)"
+  },
+  {
+    "name": "DC1A3",
+    "manufacturer": "Klanghelm",
+    "category": "Compressor",
+    "subcategory": "Modern / Multiband",
+    "desc": "Free easy-to-use compressor"
+  },
+  {
+    "name": "UA 1176",
+    "manufacturer": "UAD",
+    "category": "Compressor",
+    "subcategory": "Vintage Hardware",
+    "desc": "UREI 1176"
+  },
+  {
+    "name": "Century Channel Strip",
+    "manufacturer": "UAD",
+    "category": "Compressor",
+    "subcategory": "Vintage Hardware",
+    "desc": "Channel strip with comp",
+    "also": [
+      "Channel Strip"
+    ]
+  },
+  {
+    "name": "ReLife",
+    "manufacturer": "Analog Obsession",
+    "category": "Compressor",
+    "subcategory": "Vintage Hardware",
+    "desc": "Free LA-2A-style"
+  },
+  {
+    "name": "Beat Slammer",
+    "manufacturer": "Baby Audio",
+    "category": "Compressor",
+    "subcategory": "Modern / Multiband",
+    "desc": "Free beat-focused compressor"
+  },
+  {
+    "name": "Neutron 4 Elements",
+    "manufacturer": "iZotope",
+    "category": "Compressor",
+    "subcategory": "Modern / Multiband",
+    "desc": "Modern mix processor",
+    "also": [
+      "Channel Strip"
+    ]
+  },
+  {
+    "name": "Compressor",
+    "manufacturer": "kiloHearts",
+    "category": "Compressor",
+    "subcategory": "Modern / Multiband",
+    "desc": "Modular compressor"
+  },
+  {
+    "name": "Compactor",
+    "manufacturer": "kiloHearts",
+    "category": "Compressor",
+    "subcategory": "Modern / Multiband",
+    "desc": "Modular compactor"
+  },
+  {
+    "name": "Dynamics",
+    "manufacturer": "kiloHearts",
+    "category": "Compressor",
+    "subcategory": "Modern / Multiband",
+    "desc": "Modular dynamics"
+  },
+  {
+    "name": "Supercharger",
+    "manufacturer": "Native Instruments",
+    "category": "Compressor",
+    "subcategory": "Modern / Multiband",
+    "desc": "Tube-style compressor"
+  },
+  {
+    "name": "Supercharger GT",
+    "manufacturer": "Native Instruments",
+    "category": "Compressor",
+    "subcategory": "Modern / Multiband",
+    "desc": "Multi-band tube-style compressor"
+  },
+  {
+    "name": "Bus Compressor",
+    "manufacturer": "ToneBoosters",
+    "category": "Compressor",
+    "subcategory": "Modern / Multiband",
+    "desc": "Bus compressor"
+  },
+  {
+    "name": "Compressor",
+    "manufacturer": "ToneBoosters",
+    "category": "Compressor",
+    "subcategory": "Modern / Multiband",
+    "desc": "Track compressor"
+  },
+  {
+    "name": "RazorClip",
+    "manufacturer": "Analog Obsession",
+    "category": "Limiter",
+    "subcategory": "Clipper",
+    "desc": "Free clipper/limiter"
+  },
+  {
+    "name": "Ozone 11 Elements",
+    "manufacturer": "iZotope",
+    "category": "Limiter",
+    "subcategory": "Mastering Limiter",
+    "desc": "Mastering limiter (within Ozone)"
+  },
+  {
+    "name": "Brickwall Limiter",
+    "manufacturer": "IK Multimedia",
+    "category": "Limiter",
+    "subcategory": "Mastering Limiter",
+    "desc": "Brick-wall mastering (T-RackS)"
+  },
+  {
+    "name": "Classic Clipper",
+    "manufacturer": "IK Multimedia",
+    "category": "Limiter",
+    "subcategory": "Clipper",
+    "desc": "Hard clipper (T-RackS)"
+  },
+  {
+    "name": "Classic Multi Band Limiter",
+    "manufacturer": "IK Multimedia",
+    "category": "Limiter",
+    "subcategory": "Multiband",
+    "desc": "Multiband limiter (T-RackS)"
+  },
+  {
+    "name": "Quad Limiter",
+    "manufacturer": "IK Multimedia",
+    "category": "Limiter",
+    "subcategory": "Multiband",
+    "desc": "4-band mastering limiter (T-RackS)"
+  },
+  {
+    "name": "Stealth Limiter",
+    "manufacturer": "IK Multimedia",
+    "category": "Limiter",
+    "subcategory": "Mastering Limiter",
+    "desc": "Transparent mastering (T-RackS)"
+  },
+  {
+    "name": "Limiter",
+    "manufacturer": "kiloHearts",
+    "category": "Limiter",
+    "subcategory": "Mastering Limiter",
+    "desc": "Modular limiter"
+  },
+  {
+    "name": "Clipper",
+    "manufacturer": "kiloHearts",
+    "category": "Limiter",
+    "subcategory": "Clipper",
+    "desc": "Modular clipper"
+  },
+  {
+    "name": "Barricade",
+    "manufacturer": "ToneBoosters",
+    "category": "Limiter",
+    "subcategory": "Mastering Limiter",
+    "desc": "Brick-wall limiter"
+  },
+  {
+    "name": "Dist COLDFIRE",
+    "manufacturer": "Arturia",
+    "category": "Distortion",
+    "subcategory": "Tube / Tape / Analog",
+    "desc": "Multi-algorithm distortion"
+  },
+  {
+    "name": "Dist OPAMP-21",
+    "manufacturer": "Arturia",
+    "category": "Distortion",
+    "subcategory": "Tube / Tape / Analog",
+    "desc": "Op-amp distortion"
+  },
+  {
+    "name": "Dist TUBE-CULTURE",
+    "manufacturer": "Arturia",
+    "category": "Distortion",
+    "subcategory": "Tube / Tape / Analog",
+    "desc": "Tube saturation"
+  },
+  {
+    "name": "Reels",
+    "manufacturer": "AudioThing",
+    "category": "Distortion",
+    "subcategory": "Tube / Tape / Analog",
+    "desc": "Reel-to-reel tape saturator",
+    "also": [
+      "Tape"
+    ]
+  },
+  {
+    "name": "PlexiTape",
+    "manufacturer": "Audiority",
+    "category": "Distortion",
+    "subcategory": "Tube / Tape / Analog",
+    "desc": "Plexi-amp + tape combo",
+    "also": [
+      "Tape",
+      "Amp"
+    ]
+  },
+  {
+    "name": "CHOWTapeModel",
+    "manufacturer": "CHOW DSP",
+    "category": "Distortion",
+    "subcategory": "Tube / Tape / Analog",
+    "desc": "Free open-source reel-to-reel tape simulation",
+    "also": [
+      "Tape"
+    ]
+  },
+  {
+    "name": "Saturator X",
+    "manufacturer": "IK Multimedia",
+    "category": "Distortion",
+    "subcategory": "Tube / Tape / Analog",
+    "desc": "Multi-type analogue saturator (T-RackS)"
+  },
+  {
+    "name": "Bandbreite",
+    "manufacturer": "Sinuslabs",
+    "category": "Distortion",
+    "subcategory": "Tube / Tape / Analog",
+    "desc": "Free tape saturator with flutter/dust/slam",
+    "also": [
+      "Tape"
+    ]
+  },
+  {
+    "name": "Oxide Tape",
+    "manufacturer": "UAD",
+    "category": "Distortion",
+    "subcategory": "Tube / Tape / Analog",
+    "desc": "Tape saturation",
+    "also": [
+      "Tape"
+    ]
+  },
+  {
+    "name": "RC-20 Retro Color",
+    "manufacturer": "XLN Audio",
+    "category": "Distortion",
+    "subcategory": "Tube / Tape / Analog",
+    "desc": "Lo-fi/tape/wow-flutter creative saturator",
+    "also": [
+      "Tape",
+      "Lo-fi"
+    ]
+  },
+  {
+    "name": "Cassette",
+    "manufacturer": "Wavesfactory",
+    "category": "Distortion",
+    "subcategory": "Tube / Tape / Analog",
+    "desc": "Cassette-tape emulation",
+    "also": [
+      "Tape",
+      "Lo-fi"
+    ]
+  },
+  {
+    "name": "DAWCassette",
+    "manufacturer": "Klevgrand",
+    "category": "Distortion",
+    "subcategory": "Tube / Tape / Analog",
+    "desc": "Cassette emulation",
+    "also": [
+      "Tape",
+      "Lo-fi"
+    ]
+  },
+  {
+    "name": "Cataclysm",
+    "manufacturer": "Aberrant DSP",
+    "category": "Distortion",
+    "subcategory": "Hard / Digital / Bit / Decimator",
+    "desc": "Multi-stage saturation/distortion"
+  },
+  {
+    "name": "Lofi Oddity",
+    "manufacturer": "Aberrant DSP",
+    "category": "Distortion",
+    "subcategory": "Hard / Digital / Bit / Decimator",
+    "desc": "Lo-fi degradation",
+    "also": [
+      "Lo-fi"
+    ]
+  },
+  {
+    "name": "Degrader",
+    "manufacturer": "Klevgrand",
+    "category": "Distortion",
+    "subcategory": "Hard / Digital / Bit / Decimator",
+    "desc": "Bit/sample-rate decimation",
+    "also": [
+      "Lo-fi"
+    ]
+  },
+  {
+    "name": "Bitcrush",
+    "manufacturer": "kiloHearts",
+    "category": "Distortion",
+    "subcategory": "Hard / Digital / Bit / Decimator",
+    "desc": "Modular bit-crusher"
+  },
+  {
+    "name": "Distortion",
+    "manufacturer": "kiloHearts",
+    "category": "Distortion",
+    "subcategory": "Hard / Digital / Bit / Decimator",
+    "desc": "Modular distortion"
+  },
+  {
+    "name": "Shaper",
+    "manufacturer": "kiloHearts",
+    "category": "Distortion",
+    "subcategory": "Hard / Digital / Bit / Decimator",
+    "desc": "Modular waveshaper"
+  },
+  {
+    "name": "Nonlinear Filter",
+    "manufacturer": "kiloHearts",
+    "category": "Distortion",
+    "subcategory": "Hard / Digital / Bit / Decimator",
+    "desc": "Modular nonlinear filter/distortion"
+  },
+  {
+    "name": "Phase Distortion",
+    "manufacturer": "kiloHearts",
+    "category": "Distortion",
+    "subcategory": "Hard / Digital / Bit / Decimator",
+    "desc": "Phase-distortion synth-style FX"
+  },
+  {
+    "name": "Dirt",
+    "manufacturer": "Native Instruments",
+    "category": "Distortion",
+    "subcategory": "Hard / Digital / Bit / Decimator",
+    "desc": "Free dirty distortion"
+  },
+  {
+    "name": "Bite",
+    "manufacturer": "Native Instruments",
+    "category": "Distortion",
+    "subcategory": "Hard / Digital / Bit / Decimator",
+    "desc": "Bit-crusher"
+  },
+  {
+    "name": "Freak",
+    "manufacturer": "Native Instruments",
+    "category": "Distortion",
+    "subcategory": "Hard / Digital / Bit / Decimator",
+    "desc": "AM / FM / ring-mod distortion"
+  },
+  {
+    "name": "VHS Noise Generator",
+    "manufacturer": "SampleScience",
+    "category": "Distortion",
+    "subcategory": "Hard / Digital / Bit / Decimator",
+    "desc": "VHS-style noise and artefacts",
+    "also": [
+      "Lo-fi"
+    ]
+  },
+  {
+    "name": "Devil-Loc",
+    "manufacturer": "Soundtoys",
+    "category": "Distortion",
+    "subcategory": "Hard / Digital / Bit / Decimator",
+    "desc": "Heavy compressor/distortion (Shure Level-Loc)"
+  },
+  {
+    "name": "Little Radiator",
+    "manufacturer": "Soundtoys",
+    "category": "Distortion",
+    "subcategory": "Tube / Tape / Analog",
+    "desc": "Tube saturation"
+  },
+  {
+    "name": "SunBurnt",
+    "manufacturer": "Unplugred",
+    "category": "Distortion",
+    "subcategory": "Hard / Digital / Bit / Decimator",
+    "desc": "Distortion / amp colouring",
+    "also": [
+      "Amp"
+    ]
+  },
+  {
+    "name": "Maim",
+    "manufacturer": "Wildergarden",
+    "category": "Distortion",
+    "subcategory": "Spectral / Creative",
+    "desc": "Free MP3-encoder glitch distortion — circuit-bent LAME and Blade encoders",
+    "also": [
+      "Creative"
+    ]
+  },
+  {
+    "name": "Ferox",
+    "manufacturer": "ToneBoosters",
+    "category": "Distortion",
+    "subcategory": "Tube / Tape / Analog",
+    "desc": "Tape/tube saturation"
+  },
+  {
+    "name": "Dumpster Fire",
+    "manufacturer": "Freakshow Industries",
+    "category": "Distortion",
+    "subcategory": "Spectral / Creative",
+    "desc": "Spectral pitch shifter and chaos generator",
+    "also": [
+      "Creative",
+      "Pitch"
+    ]
+  },
+  {
+    "name": "Trash",
+    "manufacturer": "iZotope",
+    "category": "Distortion",
+    "subcategory": "Spectral / Creative",
+    "desc": "Multi-stage flagship distortion (filters + convolution)",
+    "also": [
+      "Multi-FX"
+    ]
+  },
+  {
+    "name": "VinylStrip",
+    "manufacturer": "AudioThing",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Vinyl",
+    "desc": "Vinyl-noise / wow-flutter / channel-strip combo"
+  },
+  {
+    "name": "SketchCassette II",
+    "manufacturer": "Aberrant DSP",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Cassette",
+    "desc": "Cassette tape emulator with quality controls"
+  },
+  {
+    "name": "Super VHS",
+    "manufacturer": "Baby Audio",
+    "category": "Tape/Lo-fi",
+    "subcategory": "VHS / Video",
+    "desc": "80s VHS lo-fi multi-FX (sat + chorus + wash + decimation)",
+    "also": [
+      "Multi-FX"
+    ]
+  },
+  {
+    "name": "Tape Cassette 2",
+    "manufacturer": "Caelum Audio",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Cassette",
+    "desc": "Cassette emulation"
+  },
+  {
+    "name": "AIR Tape Double Track",
+    "manufacturer": "inMusic",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Reel-to-Reel",
+    "desc": "Tape doubler"
+  },
+  {
+    "name": "Fly Tape II",
+    "manufacturer": "inMusic",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Reel-to-Reel",
+    "desc": "Tape emulation"
+  },
+  {
+    "name": "Tape Machine 24",
+    "manufacturer": "IK Multimedia",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Reel-to-Reel",
+    "desc": "Tape recorder emulation (T-RackS)"
+  },
+  {
+    "name": "Tape Machine 80",
+    "manufacturer": "IK Multimedia",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Reel-to-Reel",
+    "desc": "Tape recorder emulation (T-RackS)"
+  },
+  {
+    "name": "Tape Machine 99",
+    "manufacturer": "IK Multimedia",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Reel-to-Reel",
+    "desc": "Tape recorder emulation (T-RackS)"
+  },
+  {
+    "name": "Tape Machine 440",
+    "manufacturer": "IK Multimedia",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Reel-to-Reel",
+    "desc": "Tape recorder emulation (T-RackS)"
+  },
+  {
+    "name": "TASCAM 388",
+    "manufacturer": "IK Multimedia",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Reel-to-Reel",
+    "desc": "Tascam 388 reel-to-reel (T-RackS)"
+  },
+  {
+    "name": "TASCAM PORTA ONE",
+    "manufacturer": "IK Multimedia",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Cassette",
+    "desc": "Tascam Porta One 4-track (T-RackS)"
+  },
+  {
+    "name": "TEAC A-3340S",
+    "manufacturer": "IK Multimedia",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Reel-to-Reel",
+    "desc": "TEAC A-3340S reel-to-reel (T-RackS)"
+  },
+  {
+    "name": "TEAC A-6100 MKII",
+    "manufacturer": "IK Multimedia",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Reel-to-Reel",
+    "desc": "TEAC A-6100 reel-to-reel (T-RackS)"
+  },
+  {
+    "name": "Tape Fiasco",
+    "manufacturer": "Phase Fiasco",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Reel-to-Reel",
+    "desc": "Tape modulation"
+  },
+  {
+    "name": "Randomachine",
+    "manufacturer": "SoundDevice Digital",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Creative Degradation",
+    "desc": "Random fluctuation / tape-style imperfection"
+  },
+  {
+    "name": "Lost-Vinyls",
+    "manufacturer": "SuperflyDSP",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Vinyl",
+    "desc": "Vinyl/dust degradation"
+  },
+  {
+    "name": "Lofinity",
+    "manufacturer": "United Plugins",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Creative Degradation",
+    "desc": "Lo-fi character processor"
+  },
+  {
+    "name": "Verve",
+    "manufacturer": "UAD",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Reel-to-Reel",
+    "desc": "Tape-style harmonic enhancer"
+  },
+  {
+    "name": "Verve Essentials",
+    "manufacturer": "UAD",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Reel-to-Reel",
+    "desc": "Free tape-style harmonic enhancer"
+  },
+  {
+    "name": "Vinyl",
+    "manufacturer": "iZotope",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Vinyl",
+    "desc": "Free vinyl simulator"
+  },
+  {
+    "name": "ReelBus",
+    "manufacturer": "ToneBoosters",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Reel-to-Reel",
+    "desc": "Reel-to-reel tape bus"
+  },
+  {
+    "name": "Tape J-37",
+    "manufacturer": "Arturia",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Reel-to-Reel",
+    "desc": "Studer J37 tape machine"
+  },
+  {
+    "name": "Tape MELLO-FI",
+    "manufacturer": "Arturia",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Cassette",
+    "desc": "Free lo-fi tape (Mellotron tape sound)"
+  },
+  {
+    "name": "Pure LoFi",
+    "manufacturer": "Arturia",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Creative Degradation",
+    "desc": "Lo-fi quick-colour FX"
+  },
+  {
+    "name": "Wires",
+    "manufacturer": "AudioThing",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Vintage Media",
+    "desc": "Wire recorder emulation"
+  },
+  {
+    "name": "Dials",
+    "manufacturer": "AudioThing",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Vintage Media",
+    "desc": "Vintage radio dial-tuning effect"
+  },
+  {
+    "name": "Speakers",
+    "manufacturer": "AudioThing",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Vintage Media",
+    "desc": "Speaker cabinet / box-resonance emulation"
+  },
+  {
+    "name": "Octaves",
+    "manufacturer": "AudioThing",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Vintage Media",
+    "desc": "Vintage harmonic processor"
+  },
+  {
+    "name": "Noises",
+    "manufacturer": "AudioThing",
+    "category": "Tape/Lo-fi",
+    "subcategory": "Creative Degradation",
+    "desc": "Background noise atmospheres"
+  },
+  {
+    "name": "Chorus DIMENSION-D",
+    "manufacturer": "Arturia",
+    "category": "Modulation",
+    "subcategory": "Chorus / Ensemble",
+    "desc": "Roland Dimension D chorus"
+  },
+  {
+    "name": "Chorus JUN-6",
+    "manufacturer": "Arturia",
+    "category": "Modulation",
+    "subcategory": "Chorus / Ensemble",
+    "desc": "Juno-6 BBD chorus"
+  },
+  {
+    "name": "Magic Switch",
+    "manufacturer": "Baby Audio",
+    "category": "Modulation",
+    "subcategory": "Chorus / Ensemble",
+    "desc": "Free Juno-style one-button chorus (from Super VHS)"
+  },
+  {
+    "name": "Chorus",
+    "manufacturer": "kiloHearts",
+    "category": "Modulation",
+    "subcategory": "Chorus / Ensemble",
+    "desc": "Modular chorus"
+  },
+  {
+    "name": "Ensemble",
+    "manufacturer": "kiloHearts",
+    "category": "Modulation",
+    "subcategory": "Chorus / Ensemble",
+    "desc": "Modular ensemble"
+  },
+  {
+    "name": "Little MicroShift",
+    "manufacturer": "Soundtoys",
+    "category": "Modulation",
+    "subcategory": "Chorus / Ensemble",
+    "desc": "Pitch-based widening/chorus",
+    "also": [
+      "Stereo"
+    ]
+  },
+  {
+    "name": "Module",
+    "manufacturer": "ToneBoosters",
+    "category": "Modulation",
+    "subcategory": "Chorus / Ensemble",
+    "desc": "Modular modulation FX"
+  },
+  {
+    "name": "Flanger BL-20",
+    "manufacturer": "Arturia",
+    "category": "Modulation",
+    "subcategory": "Flanger / Phaser / Rotary",
+    "desc": "Bel BF-20 flanger"
+  },
+  {
+    "name": "Phaser BI-TRON",
+    "manufacturer": "Arturia",
+    "category": "Modulation",
+    "subcategory": "Flanger / Phaser / Rotary",
+    "desc": "Mu-Tron Bi-Phase"
+  },
+  {
+    "name": "Rotary CLS-222",
+    "manufacturer": "Arturia",
+    "category": "Modulation",
+    "subcategory": "Flanger / Phaser / Rotary",
+    "desc": "Leslie rotary speaker"
+  },
+  {
+    "name": "Leslie",
+    "manufacturer": "IK Multimedia",
+    "category": "Modulation",
+    "subcategory": "Flanger / Phaser / Rotary",
+    "desc": "Leslie rotary (T-RackS)"
+  },
+  {
+    "name": "Flanger",
+    "manufacturer": "kiloHearts",
+    "category": "Modulation",
+    "subcategory": "Flanger / Phaser / Rotary",
+    "desc": "Modular flanger"
+  },
+  {
+    "name": "Phaser",
+    "manufacturer": "kiloHearts",
+    "category": "Modulation",
+    "subcategory": "Flanger / Phaser / Rotary",
+    "desc": "Modular phaser"
+  },
+  {
+    "name": "PhaseMistress",
+    "manufacturer": "Soundtoys",
+    "category": "Modulation",
+    "subcategory": "Flanger / Phaser / Rotary",
+    "desc": "Flagship multi-mode phaser"
+  },
+  {
+    "name": "Pitch Drift",
+    "manufacturer": "Baby Audio",
+    "category": "Modulation",
+    "subcategory": "Pitch-Drift / Wow-Flutter",
+    "desc": "Free pitch-wobble plug (drift algorithm from BA-1)"
+  },
+  {
+    "name": "Warp",
+    "manufacturer": "Baby Audio",
+    "category": "Modulation",
+    "subcategory": "Pitch-Drift / Wow-Flutter",
+    "desc": "Free varispeed/time-stretch FX (from Transit 2)"
+  },
+  {
+    "name": "Permute",
+    "manufacturer": "Cabbage Audio (Puremagnetik)",
+    "category": "Modulation",
+    "subcategory": "Pitch-Drift / Wow-Flutter",
+    "desc": "Free buffer-modulation matrix (granular looping + spectral + spatial)",
+    "also": [
+      "Granular"
+    ]
+  },
+  {
+    "name": "Panflow",
+    "manufacturer": "Audiomodern",
+    "category": "Modulation",
+    "subcategory": "Movement / Panning",
+    "desc": "Free creative auto-panning modulator with pattern editor"
+  },
+  {
+    "name": "Filter M12",
+    "manufacturer": "Arturia",
+    "category": "Filter",
+    "subcategory": "Resonant Synth-Style",
+    "desc": "Oberheim Matrix-12 filter"
+  },
+  {
+    "name": "Filter MINI",
+    "manufacturer": "Arturia",
+    "category": "Filter",
+    "subcategory": "Resonant Synth-Style",
+    "desc": "Minimoog ladder filter"
+  },
+  {
+    "name": "Filter MS-20",
+    "manufacturer": "Arturia",
+    "category": "Filter",
+    "subcategory": "Resonant Synth-Style",
+    "desc": "Korg MS-20 Sallen-Key"
+  },
+  {
+    "name": "Filter SEM",
+    "manufacturer": "Arturia",
+    "category": "Filter",
+    "subcategory": "Resonant Synth-Style",
+    "desc": "Oberheim SEM 12-dB"
+  },
+  {
+    "name": "Filter",
+    "manufacturer": "kiloHearts",
+    "category": "Filter",
+    "subcategory": "Resonant Synth-Style",
+    "desc": "Modular filter"
+  },
+  {
+    "name": "Ladder Filter",
+    "manufacturer": "kiloHearts",
+    "category": "Filter",
+    "subcategory": "Resonant Synth-Style",
+    "desc": "Modular Moog-style ladder"
+  },
+  {
+    "name": "Comb Filter",
+    "manufacturer": "kiloHearts",
+    "category": "Filter",
+    "subcategory": "Resonant Synth-Style",
+    "desc": "Modular comb filter"
+  },
+  {
+    "name": "Formant Filter",
+    "manufacturer": "kiloHearts",
+    "category": "Filter",
+    "subcategory": "Spectral / Image / Special",
+    "desc": "Modular formant/vowel filter"
+  },
+  {
+    "name": "Resonator",
+    "manufacturer": "kiloHearts",
+    "category": "Filter",
+    "subcategory": "Resonant Synth-Style",
+    "desc": "Modular resonator"
+  },
+  {
+    "name": "Filterstep",
+    "manufacturer": "Audiomodern",
+    "category": "Filter",
+    "subcategory": "Motion / Sequenced / Step",
+    "desc": "Free motion-filter step-sequencer (rhythmic gating-style filter modulation)"
+  },
+  {
+    "name": "Gatelab",
+    "manufacturer": "Audiomodern",
+    "category": "Filter",
+    "subcategory": "Motion / Sequenced / Step",
+    "desc": "Free gate-sequencer / volume modulation generator (sends MIDI too)",
+    "also": [
+      "Gate"
+    ]
+  },
+  {
+    "name": "TugSpect",
+    "manufacturer": "2Rule",
+    "category": "Filter",
+    "subcategory": "Spectral / Image / Special",
+    "desc": "Free image-scanning FFT spectral filter (paint shapes / load image)",
+    "also": [
+      "Creative"
+    ]
+  },
+  {
+    "name": "Frequency Shifter",
+    "manufacturer": "kiloHearts",
+    "category": "Filter",
+    "subcategory": "Spectral / Image / Special",
+    "desc": "Modular freq shifter"
+  },
+  {
+    "name": "Ring Mod",
+    "manufacturer": "kiloHearts",
+    "category": "Filter",
+    "subcategory": "Spectral / Image / Special",
+    "desc": "Modular ring modulator"
+  },
+  {
+    "name": "Vocal Doubler",
+    "manufacturer": "iZotope",
+    "category": "Pitch",
+    "subcategory": "Vocal Pitch",
+    "desc": "Free vocal doubler/pitch",
+    "also": [
+      "Vocal"
+    ]
+  },
+  {
+    "name": "Pitch Shifter",
+    "manufacturer": "kiloHearts",
+    "category": "Pitch",
+    "subcategory": "Pitch Shift",
+    "desc": "Modular pitch shifter"
+  },
+  {
+    "name": "VoicePitcher",
+    "manufacturer": "ToneBoosters",
+    "category": "Pitch",
+    "subcategory": "Vocal Pitch",
+    "desc": "Vocal pitch correction",
+    "also": [
+      "Vocal"
+    ]
+  },
+  {
+    "name": "Ozone Imager 2",
+    "manufacturer": "iZotope",
+    "category": "Stereo",
+    "subcategory": "Imager",
+    "desc": "Free stereo imager"
+  },
+  {
+    "name": "Quad Image",
+    "manufacturer": "IK Multimedia",
+    "category": "Stereo",
+    "subcategory": "Imager",
+    "desc": "4-band imager (T-RackS)"
+  },
+  {
+    "name": "Stereo",
+    "manufacturer": "kiloHearts",
+    "category": "Stereo",
+    "subcategory": "Imager",
+    "desc": "Modular stereo tool"
+  },
+  {
+    "name": "Haas",
+    "manufacturer": "kiloHearts",
+    "category": "Stereo",
+    "subcategory": "Widener",
+    "desc": "Modular Haas widener"
+  },
+  {
+    "name": "Channel Mixer",
+    "manufacturer": "kiloHearts",
+    "category": "Stereo",
+    "subcategory": "Routing",
+    "desc": "Modular channel mixer"
+  },
+  {
+    "name": "Wider",
+    "manufacturer": "Polyverse",
+    "category": "Stereo",
+    "subcategory": "Widener",
+    "desc": "Mono-to-stereo widener"
+  },
+  {
+    "name": "Pancz",
+    "manufacturer": "Spectral Plugins",
+    "category": "Stereo",
+    "subcategory": "Panner",
+    "desc": "Stereo / panning manipulator"
+  },
+  {
+    "name": "OCS-45",
+    "manufacturer": "Spectral Plugins",
+    "category": "Stereo",
+    "subcategory": "Imager",
+    "desc": "Stereo processor"
+  },
+  {
+    "name": "Mid-Side Transformer",
+    "manufacturer": "ToneBoosters",
+    "category": "Stereo",
+    "subcategory": "Mid-Side",
+    "desc": "Mid-side processor"
+  },
+  {
+    "name": "Efx FRAGMENTS",
+    "manufacturer": "Arturia",
+    "category": "Multi-FX",
+    "subcategory": "Granular Multi-FX",
+    "desc": "Granular multi-FX",
+    "also": [
+      "Granular",
+      "Reverb"
+    ]
+  },
+  {
+    "name": "Efx MOTIONS",
+    "manufacturer": "Arturia",
+    "category": "Multi-FX",
+    "subcategory": "Modulation Multi-FX",
+    "desc": "Modulation multi-FX (LFO routings + chains)",
+    "also": [
+      "Modulation"
+    ]
+  },
+  {
+    "name": "Efx REFRACT",
+    "manufacturer": "Arturia",
+    "category": "Multi-FX",
+    "subcategory": "Multiband Multi-FX",
+    "desc": "Multiband effect splitter / multi-FX"
+  },
+  {
+    "name": "Magic Dice",
+    "manufacturer": "Baby Audio",
+    "category": "Multi-FX",
+    "subcategory": "Random / Generative",
+    "desc": "Free random reverb/delay/mod multi-FX generator — rolls the dice",
+    "also": [
+      "Reverb",
+      "Delay"
+    ]
+  },
+  {
+    "name": "TugMultiEffect",
+    "manufacturer": "2Rule",
+    "category": "Multi-FX",
+    "subcategory": "Modular Routing",
+    "desc": "Free modular multi-FX (11 effects routable in series/parallel — like a free Reaktor mini-rack)"
+  },
+  {
+    "name": "TugGlicento",
+    "manufacturer": "2Rule",
+    "category": "Multi-FX",
+    "subcategory": "Glitch / Effectrix-style",
+    "desc": "Free Effectrix-style glitch multi-FX (5 bands × 12 effects)",
+    "also": [
+      "Creative",
+      "Filter"
+    ]
+  },
+  {
+    "name": "Showtime Amp",
+    "manufacturer": "UAD",
+    "category": "Multi-FX",
+    "subcategory": "Amp / Pedalboard",
+    "desc": "Amp / multi-FX",
+    "also": [
+      "Amp"
+    ]
+  },
+  {
+    "name": "FlX",
+    "manufacturer": "ToneBoosters",
+    "category": "Multi-FX",
+    "subcategory": "Mixer / Bus FX",
+    "desc": "Mixer / FX bus tools"
+  },
+  {
+    "name": "FlX4",
+    "manufacturer": "ToneBoosters",
+    "category": "Multi-FX",
+    "subcategory": "Mixer / Bus FX",
+    "desc": "4-channel FX bus tools"
+  },
+  {
+    "name": "AmpliTube 5",
+    "manufacturer": "IK Multimedia",
+    "category": "Amp/Cab",
+    "subcategory": "Amp Modeller",
+    "desc": "Flagship guitar amp/FX modeller"
+  },
+  {
+    "name": "TONEX",
+    "manufacturer": "IK Multimedia",
+    "category": "Amp/Cab",
+    "subcategory": "Amp Capture",
+    "desc": "AI amp-modelling capture player"
+  },
+  {
+    "name": "Guitar Rig 7",
+    "manufacturer": "Native Instruments",
+    "category": "Amp/Cab",
+    "subcategory": "Amp Modeller",
+    "desc": "Guitar amp/effects suite",
+    "also": [
+      "Multi-FX"
+    ]
+  },
+  {
+    "name": "LivePedalboard1",
+    "manufacturer": "Lostin70s",
+    "category": "Amp/Cab",
+    "subcategory": "Pedalboard",
+    "desc": "Live-performance pedalboard"
+  },
+  {
+    "name": "Cloudmax Breeze",
+    "manufacturer": "Karanyi Sounds",
+    "category": "Vocal",
+    "subcategory": "Vocal Chain",
+    "desc": "AI-assisted full vocal chain (analyses and sets parameters)",
+    "also": [
+      "Multi-FX"
+    ]
+  },
+  {
+    "name": "ReSing",
+    "manufacturer": "IK Multimedia",
+    "category": "Vocal",
+    "subcategory": "Voice Transformer",
+    "desc": "AI vocal/voice tool"
+  },
+  {
+    "name": "Joe Chiccarelli Vocal Strip",
+    "manufacturer": "IK Multimedia",
+    "category": "Vocal",
+    "subcategory": "Vocal Chain",
+    "desc": "Vocal channel-strip (T-RackS)",
+    "also": [
+      "Channel Strip"
+    ]
+  },
+  {
+    "name": "De Esser",
+    "manufacturer": "IK Multimedia",
+    "category": "Vocal",
+    "subcategory": "De-esser",
+    "desc": "De-esser (T-RackS)"
+  },
+  {
+    "name": "DeEsser",
+    "manufacturer": "ToneBoosters",
+    "category": "Vocal",
+    "subcategory": "De-esser",
+    "desc": "De-esser"
+  },
+  {
+    "name": "Sibalance",
+    "manufacturer": "ToneBoosters",
+    "category": "Vocal",
+    "subcategory": "De-esser",
+    "desc": "Sibilance/de-esser"
+  },
+  {
+    "name": "Klamur",
+    "manufacturer": "Cabbage Audio (Puremagnetik)",
+    "category": "Creative",
+    "subcategory": "Loop / Capture",
+    "desc": "Free always-on lookback recorder & loop processor (90s buffer of past audio you can recall and process)"
+  },
+  {
+    "name": "Replicas",
+    "manufacturer": "Cabbage Audio (Puremagnetik)",
+    "category": "Creative",
+    "subcategory": "Granular / Splice",
+    "desc": "Free splice sampler (vintage tape-splice manipulation)"
+  },
+  {
+    "name": "Zerone",
+    "manufacturer": "Cabbage Audio (Puremagnetik)",
+    "category": "Creative",
+    "subcategory": "Granular / Splice",
+    "desc": "Free granular particle splitter (audio decomposition)",
+    "also": [
+      "Granular"
+    ]
+  },
+  {
+    "name": "Backmask",
+    "manufacturer": "Freakshow Industries",
+    "category": "Creative",
+    "subcategory": "Reverser / Glitch",
+    "desc": "Chaotic reverse-audio glitch processor"
+  },
+  {
+    "name": "DreamEater",
+    "manufacturer": "Freakshow Industries",
+    "category": "Creative",
+    "subcategory": "Degradation / Mangler",
+    "desc": "Experimental degradation/dreamy mangler"
+  },
+  {
+    "name": "MISHBY",
+    "manufacturer": "Freakshow Industries",
+    "category": "Creative",
+    "subcategory": "Degradation / Mangler",
+    "desc": "Experimental chaotic mangler"
+  },
+  {
+    "name": "PocketDimension",
+    "manufacturer": "Freakshow Industries",
+    "category": "Creative",
+    "subcategory": "Degradation / Mangler",
+    "desc": "Visual-cortex / chaos processor"
+  },
+  {
+    "name": "codec",
+    "manufacturer": "Lese",
+    "category": "Creative",
+    "subcategory": "Reverser / Glitch",
+    "desc": "Codec/glitch effect"
+  },
+  {
+    "name": "sweep",
+    "manufacturer": "Lese",
+    "category": "Creative",
+    "subcategory": "Reverser / Glitch",
+    "desc": "Sweep modulator"
+  },
+  {
+    "name": "Neutone FX",
+    "manufacturer": "Neutone",
+    "category": "Creative",
+    "subcategory": "Neural / AI",
+    "desc": "Neural audio transformer"
+  },
+  {
+    "name": "Ekko Demo",
+    "manufacturer": "SoundGhosts",
+    "category": "Creative",
+    "subcategory": "Degradation / Mangler",
+    "desc": "Echo/atmospheric demo"
+  },
+  {
+    "name": "Texturize",
+    "manufacturer": "SoundGhosts",
+    "category": "Creative",
+    "subcategory": "Degradation / Mangler",
+    "desc": "Textural mangler"
+  },
+  {
+    "name": "Dust",
+    "manufacturer": "SoundMorph",
+    "category": "Creative",
+    "subcategory": "Reverser / Glitch",
+    "desc": "Glitch/spectral mangler"
+  },
+  {
+    "name": "Dust (fx)",
+    "manufacturer": "SoundMorph",
+    "category": "Creative",
+    "subcategory": "Reverser / Glitch",
+    "desc": "Glitch/spectral FX version"
+  },
+  {
+    "name": "WaveWarper 2",
+    "manufacturer": "SoundMorph",
+    "category": "Creative",
+    "subcategory": "Degradation / Mangler",
+    "desc": "Wave-mangling FX"
+  },
+  {
+    "name": "Skew 2",
+    "manufacturer": "Sinevibes",
+    "category": "Creative",
+    "subcategory": "Degradation / Mangler",
+    "desc": "Wave-shaping creative FX"
+  },
+  {
+    "name": "LePhonk",
+    "manufacturer": "Xynth Audio",
+    "category": "Creative",
+    "subcategory": "Degradation / Mangler",
+    "desc": "Phonk/lo-fi creative FX"
+  },
+  {
+    "name": "Transient Shaper",
+    "manufacturer": "kiloHearts",
+    "category": "Transient",
+    "subcategory": "Transient Shaper",
+    "desc": "Modular transient shaper"
+  },
+  {
+    "name": "Transient Master",
+    "manufacturer": "Native Instruments",
+    "category": "Transient",
+    "subcategory": "Transient Shaper",
+    "desc": "Free transient shaper"
+  },
+  {
+    "name": "DB-30 Drum Butter",
+    "manufacturer": "XLN Audio",
+    "category": "Transient",
+    "subcategory": "Drum Bus",
+    "desc": "Drum-bus saturator/transient"
+  },
+  {
+    "name": "Chopa",
+    "manufacturer": "Analog Obsession",
+    "category": "Gate",
+    "subcategory": "Creative Gate",
+    "desc": "Free creative gate / chopper"
+  },
+  {
+    "name": "DrGate",
+    "manufacturer": "Analog Obsession",
+    "category": "Gate",
+    "subcategory": "Standard Gate",
+    "desc": "Free gate"
+  },
+  {
+    "name": "Gate",
+    "manufacturer": "kiloHearts",
+    "category": "Gate",
+    "subcategory": "Standard Gate",
+    "desc": "Modular gate"
+  },
+  {
+    "name": "Trance Gate",
+    "manufacturer": "kiloHearts",
+    "category": "Gate",
+    "subcategory": "Creative Gate",
+    "desc": "Modular trance gate"
+  },
+  {
+    "name": "Gate",
+    "manufacturer": "ToneBoosters",
+    "category": "Gate",
+    "subcategory": "Standard Gate",
+    "desc": "Gate"
+  },
+  {
+    "name": "White Channel",
+    "manufacturer": "IK Multimedia",
+    "category": "Channel Strip",
+    "subcategory": "Console Channel",
+    "desc": "Neve V-series channel strip (T-RackS)"
+  },
+  {
+    "name": "One",
+    "manufacturer": "IK Multimedia",
+    "category": "Channel Strip",
+    "subcategory": "All-in-One",
+    "desc": "All-in-one comp/EQ/etc. (T-RackS)"
+  },
+  {
+    "name": "Suite",
+    "manufacturer": "IK Multimedia",
+    "category": "Channel Strip",
+    "subcategory": "All-in-One",
+    "desc": "Multi-effect channel (T-RackS)"
+  },
+  {
+    "name": "ChannelStrip",
+    "manufacturer": "trnr",
+    "category": "Channel Strip",
+    "subcategory": "All-in-One",
+    "desc": "Free channel strip"
+  },
+  {
+    "name": "610-A",
+    "manufacturer": "UAD",
+    "category": "Channel Strip",
+    "subcategory": "Tube Preamp",
+    "desc": "UA 610-A tube preamp"
+  },
+  {
+    "name": "610-B",
+    "manufacturer": "UAD",
+    "category": "Channel Strip",
+    "subcategory": "Tube Preamp",
+    "desc": "UA 610-B tube preamp"
+  },
+  {
+    "name": "Pre 1973",
+    "manufacturer": "Arturia",
+    "category": "Preamp",
+    "subcategory": "Console Preamp",
+    "desc": "Neve 1073 preamp"
+  },
+  {
+    "name": "Pre TridA",
+    "manufacturer": "Arturia",
+    "category": "Preamp",
+    "subcategory": "Console Preamp",
+    "desc": "Trident A range preamp"
+  },
+  {
+    "name": "Pre V76",
+    "manufacturer": "Arturia",
+    "category": "Preamp",
+    "subcategory": "Tube Preamp",
+    "desc": "Telefunken V76 preamp"
+  },
+  {
+    "name": "Bus EXCITER-104",
+    "manufacturer": "Arturia",
+    "category": "Mastering",
+    "subcategory": "Exciter",
+    "desc": "Aphex Aural Exciter 104"
+  },
+  {
+    "name": "Bus FORCE",
+    "manufacturer": "Arturia",
+    "category": "Mastering",
+    "subcategory": "Multiband",
+    "desc": "Multi-band mastering"
+  },
+  {
+    "name": "Bus PEAK",
+    "manufacturer": "Arturia",
+    "category": "Mastering",
+    "subcategory": "Maximizer",
+    "desc": "Maximizer"
+  },
+  {
+    "name": "Tonal Balance Control 2",
+    "manufacturer": "iZotope",
+    "category": "Mastering",
+    "subcategory": "Reference",
+    "desc": "Mastering tonal reference"
+  },
+  {
+    "name": "Lurssen Mastering Console",
+    "manufacturer": "IK Multimedia",
+    "category": "Mastering",
+    "subcategory": "Preset Console",
+    "desc": "Mastering-engineer presets"
+  },
+  {
+    "name": "Insight 2",
+    "manufacturer": "iZotope",
+    "category": "Metering",
+    "subcategory": "Loudness/Spectrum",
+    "desc": "Loudness/spectrum metering"
+  },
+  {
+    "name": "Metering",
+    "manufacturer": "IK Multimedia",
+    "category": "Metering",
+    "subcategory": "Loudness/Spectrum",
+    "desc": "T-RackS suite metering"
+  },
+  {
+    "name": "Loudness Meter 2",
+    "manufacturer": "Youlean",
+    "category": "Metering",
+    "subcategory": "LUFS",
+    "desc": "LUFS loudness meter"
+  },
+  {
+    "name": "EBU Loudness",
+    "manufacturer": "ToneBoosters",
+    "category": "Loudness",
+    "subcategory": "EBU R128",
+    "desc": "EBU R128 loudness"
+  },
+  {
+    "name": "EBU Compact",
+    "manufacturer": "ToneBoosters",
+    "category": "Loudness",
+    "subcategory": "EBU R128",
+    "desc": "EBU R128 compact loudness"
+  },
+  {
+    "name": "Broadcast",
+    "manufacturer": "ToneBoosters",
+    "category": "Loudness",
+    "subcategory": "Broadcast",
+    "desc": "Broadcast loudness compliance"
+  },
+  {
+    "name": "Dither",
+    "manufacturer": "ToneBoosters",
+    "category": "Loudness",
+    "subcategory": "Dither",
+    "desc": "Dither"
+  },
+  {
+    "name": "Relay",
+    "manufacturer": "iZotope",
+    "category": "Utility",
+    "subcategory": "Routing",
+    "desc": "Inter-track relay/communicator"
+  },
+  {
+    "name": "Gain",
+    "manufacturer": "kiloHearts",
+    "category": "Utility",
+    "subcategory": "Gain",
+    "desc": "Modular gain"
+  },
+  {
+    "name": "Reverser",
+    "manufacturer": "kiloHearts",
+    "category": "Utility",
+    "subcategory": "Audio Tool",
+    "desc": "Modular audio reverser"
+  },
+  {
+    "name": "Tape Stop",
+    "manufacturer": "kiloHearts",
+    "category": "Utility",
+    "subcategory": "Audio Tool",
+    "desc": "Modular tape-stop effect"
+  },
+  {
+    "name": "mda",
+    "manufacturer": "mda",
+    "category": "Utility",
+    "subcategory": "Tool Library",
+    "desc": "Free mda library (variety of utility tools)"
+  },
+  {
+    "name": "Module",
+    "manufacturer": "ToneBoosters",
+    "category": "Utility",
+    "subcategory": "Routing",
+    "desc": "Modular host"
+  },
+  {
+    "name": "Flechtwerk",
+    "manufacturer": "trnr",
+    "category": "Utility",
+    "subcategory": "Routing",
+    "desc": "Routing utility"
+  },
+  {
+    "name": "Evoke",
+    "manufacturer": "ToneBoosters",
+    "category": "Utility",
+    "subcategory": "Audio Tool",
+    "desc": "Evoke utility"
+  },
+  {
+    "name": "Isone",
+    "manufacturer": "ToneBoosters",
+    "category": "Utility",
+    "subcategory": "Headphone Sim",
+    "desc": "Headphone room simulator"
+  },
+  {
+    "name": "AppleAES3Audio",
+    "manufacturer": "Apple",
+    "category": "Utility",
+    "subcategory": "System",
+    "desc": "System AES audio component"
+  },
+  {
+    "name": "Airwindows Consolidated",
+    "manufacturer": "Airwindows",
+    "category": "Utility",
+    "subcategory": "Tool Library",
+    "desc": "Airwindows full plugin library (hundreds of small utilities)"
+  },
+  {
+    "name": "ARC 3",
+    "manufacturer": "IK Multimedia",
+    "category": "Reference",
+    "subcategory": "Room Correction",
+    "desc": "Acoustic room correction"
+  },
+  {
+    "name": "Mic Room",
+    "manufacturer": "IK Multimedia",
+    "category": "Reference",
+    "subcategory": "Mic Modelling",
+    "desc": "Microphone modelling (T-RackS)"
+  },
+  {
+    "name": "Master Match",
+    "manufacturer": "IK Multimedia",
+    "category": "Reference",
+    "subcategory": "Reference Match",
+    "desc": "Reference-matching mastering (T-RackS)"
+  },
+  {
+    "name": "Deja vu",
+    "manufacturer": "Cymatics",
+    "category": "Tools",
+    "subcategory": "Sample Tools",
+    "desc": "Sample-finder/audio-detection helper"
+  },
+  {
+    "name": "Memory",
+    "manufacturer": "Cymatics",
+    "category": "Tools",
+    "subcategory": "Sample Tools",
+    "desc": "Sample memory tool"
+  },
+  {
+    "name": "Origin",
+    "manufacturer": "Cymatics",
+    "category": "Tools",
+    "subcategory": "Sample Tools",
+    "desc": "Sample/origin tool"
+  },
+  {
+    "name": "PlaceIt",
+    "manufacturer": "Get Soundly",
+    "category": "Tools",
+    "subcategory": "Reference",
+    "desc": "Reference/placement helper"
+  },
+  {
+    "name": "Life",
+    "manufacturer": "XLN Audio",
+    "category": "Tools",
+    "subcategory": "DAW Recorder",
+    "desc": "Idea capture / DAW continuous recorder"
+  },
+  {
+    "name": "Life DAW Recorder",
+    "manufacturer": "XLN Audio",
+    "category": "Tools",
+    "subcategory": "DAW Recorder",
+    "desc": "Continuous DAW recorder"
+  },
+  {
+    "name": "TugMidiSeq",
+    "manufacturer": "2Rule",
+    "category": "Tools",
+    "subcategory": "MIDI Sequencer",
+    "desc": "Free MIDI step sequencer"
+  },
+  {
+    "name": "Captain Beat",
+    "manufacturer": "Mixed In Key",
+    "category": "MIDI Tools",
+    "subcategory": "Drum Generator",
+    "desc": "Drum-pattern generator (Audio + MIDI variants)"
+  },
+  {
+    "name": "Beat Epic",
+    "manufacturer": "Mixed In Key",
+    "category": "MIDI Tools",
+    "subcategory": "Drum Generator",
+    "desc": "Drum-pattern generator (Epic, A+M)"
+  },
+  {
+    "name": "Chords",
+    "manufacturer": "Mixed In Key",
+    "category": "MIDI Tools",
+    "subcategory": "Chord Generator",
+    "desc": "Chord progression generator (A+M)"
+  },
+  {
+    "name": "Chords Epic",
+    "manufacturer": "Mixed In Key",
+    "category": "MIDI Tools",
+    "subcategory": "Chord Generator",
+    "desc": "Chord progression generator (Epic, A+M)"
+  },
+  {
+    "name": "Deep",
+    "manufacturer": "Mixed In Key",
+    "category": "MIDI Tools",
+    "subcategory": "Bass Generator",
+    "desc": "Bass-line generator (A+M)"
+  },
+  {
+    "name": "Deep Epic",
+    "manufacturer": "Mixed In Key",
+    "category": "MIDI Tools",
+    "subcategory": "Bass Generator",
+    "desc": "Bass-line generator (Epic, A+M)"
+  },
+  {
+    "name": "Melody",
+    "manufacturer": "Mixed In Key",
+    "category": "MIDI Tools",
+    "subcategory": "Melody Generator",
+    "desc": "Melody generator (A+M)"
+  },
+  {
+    "name": "Melody Epic",
+    "manufacturer": "Mixed In Key",
+    "category": "MIDI Tools",
+    "subcategory": "Melody Generator",
+    "desc": "Melody generator (Epic, A+M)"
+  },
+  {
+    "name": "Play",
+    "manufacturer": "Mixed In Key",
+    "category": "MIDI Tools",
+    "subcategory": "Performance",
+    "desc": "Performance/playback helper (A+M)"
+  },
+  {
+    "name": "Play Epic",
+    "manufacturer": "Mixed In Key",
+    "category": "MIDI Tools",
+    "subcategory": "Performance",
+    "desc": "Performance/playback helper (Epic, A+M)"
+  },
+  {
+    "name": "Waves (via WaveShell)",
+    "manufacturer": "Waves",
+    "category": "Other",
+    "subcategory": "Wrapper",
+    "desc": "WaveShell containers — open Waves Central to see activated plugins (CLA, H-series, Renaissance, SSL etc.)"
+  }
+];
+const QUICK_PICKS = [
+  {
+    "q": "Quick warm reverb on anything",
+    "a": "Native Instruments Raum · Valhalla Supermassive · UAD Pure Plate"
+  },
+  {
+    "q": "Lush vocal/texture reverb",
+    "a": "Soundtoys SpaceBlender · Dawesome Sol · Cabbage Pastfabric2"
+  },
+  {
+    "q": "Tape echo / RE-201 vibe",
+    "a": "Arturia Delay TAPE-201 · UAD Galaxy Tape Echo · IK Space Delay"
+  },
+  {
+    "q": "Creative weird delay",
+    "a": "Karanyi Matra · Glitchmachines Hysteresis · Valhalla FreqEcho · 2Rule TugPhonon"
+  },
+  {
+    "q": "Quick analog warmth/saturation",
+    "a": "UAD Verve · Sinuslabs Bandbreite · IK Saturator X"
+  },
+  {
+    "q": "Aggressive distortion",
+    "a": "iZotope Trash · Soundtoys Devil-Loc · Wildergarden Maim (digital glitch)"
+  },
+  {
+    "q": "Tape character",
+    "a": "Arturia Tape J-37 · CHOW Tape Model · Klevgrand DAWCassette · Wavesfactory Cassette"
+  },
+  {
+    "q": "80s lo-fi colour",
+    "a": "Baby Audio Super VHS · XLN RC-20 · Aberrant SketchCassette II"
+  },
+  {
+    "q": "Mastering chain",
+    "a": "iZotope Ozone 11 Elements + Tonal Balance Control 2 + Insight 2"
+  },
+  {
+    "q": "Channel strip",
+    "a": "IK British Channel (SSL) · IK White Channel (Neve) · Klanghelm DC1A3 (single-knob)"
+  },
+  {
+    "q": "Quick chorus",
+    "a": "Arturia Chorus JUN-6 · Baby Audio Magic Switch (free)"
+  },
+  {
+    "q": "Pad/synth from scratch",
+    "a": "Pigments · Arturia V Collection · Native Instruments Massive X"
+  },
+  {
+    "q": "Cinematic texture",
+    "a": "Lunacy BEAM · Solstice · Cabbage Expanse · Arturia Augmented series"
+  },
+  {
+    "q": "Drum machine vibe",
+    "a": "Korg Gadget kits · Native Instruments Battery · Baby Audio Tekno"
+  },
+  {
+    "q": "Granular",
+    "a": "Pigments · Audio Damage Descent · Cabbage Swarm/Zerone/Partikl · Arturia Efx Fragments"
+  },
+  {
+    "q": "Reference / mastering metering",
+    "a": "Youlean Loudness Meter 2 · iZotope Insight 2"
+  },
+  {
+    "q": "Random/inspiration generator",
+    "a": "Baby Audio Magic Dice · Karanyi Matra (Smart Random) · Audiomodern Filterstep/Gatelab/Panflow"
+  }
+];
+const CATEGORY_GROUPS = {
+  "INSTRUMENTS": [
+    "Synth · Analog",
+    "Synth · Wavetable",
+    "Synth · FM",
+    "Synth · Spectral",
+    "Sampler",
+    "Drum Machine",
+    "Acoustic/Modelled",
+    "Keys",
+    "Bass/Guitar",
+    "Vocal Instrument",
+    "Texture",
+    "Other Instrument"
+  ],
+  "EFFECTS": [
+    "Reverb",
+    "Delay",
+    "EQ",
+    "Compressor",
+    "Limiter",
+    "Distortion",
+    "Tape/Lo-fi",
+    "Modulation",
+    "Filter",
+    "Pitch",
+    "Stereo",
+    "Multi-FX",
+    "Amp/Cab",
+    "Vocal",
+    "Creative",
+    "Transient",
+    "Gate",
+    "Channel Strip",
+    "Preamp",
+    "Mastering"
+  ],
+  "UTILITY": [
+    "Metering",
+    "Loudness",
+    "Utility",
+    "Reference",
+    "Tools",
+    "MIDI Tools",
+    "Other"
+  ]
+};
+
+// ============================================================
+// HELPERS
+// ============================================================
+const $ = (s, root = document) => root.querySelector(s);
+const $$ = (s, root = document) => Array.from(root.querySelectorAll(s));
+
+function escapeHTML(s) {
+  return s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+}
+function highlightMatch(text, query) {
+  if (!query) return escapeHTML(text);
+  const safe = escapeHTML(text);
+  const safeQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp(`(${safeQuery})`, 'gi');
+  return safe.replace(re, '<mark>$1</mark>');
+}
+function slug(s) {
+  return s.replace(/[\s·\/]+/g, '-').toLowerCase();
+}
+function getGroup(category) {
+  for (const [group, cats] of Object.entries(CATEGORY_GROUPS)) {
+    if (cats.includes(category)) return group;
+  }
+  return "OTHER";
+}
+function subcategoriesFor(category) {
+  // Preserve discovery order from PLUGINS array
+  const seen = new Set();
+  const ordered = [];
+  for (const p of PLUGINS) {
+    if (p.category === category && !seen.has(p.subcategory)) {
+      seen.add(p.subcategory);
+      ordered.push(p.subcategory);
+    }
+  }
+  return ordered;
+}
+
+// ============================================================
+// STATE
+// ============================================================
+let currentSearch = "";
+let currentMainFilter = "all";   // "all", group name (INSTRUMENTS/EFFECTS/UTILITY), or specific category
+let currentSubFilter = "all";    // "all" or a specific subcategory
+let qpHistory = [];               // recently shown picks (avoid repeats)
+
+// ============================================================
+// MATCHING
+// ============================================================
+function matchesSearch(plugin, query) {
+  if (!query) return true;
+  const q = query.toLowerCase();
+  return (
+    plugin.name.toLowerCase().includes(q) ||
+    plugin.manufacturer.toLowerCase().includes(q) ||
+    plugin.category.toLowerCase().includes(q) ||
+    plugin.subcategory.toLowerCase().includes(q) ||
+    plugin.desc.toLowerCase().includes(q) ||
+    (plugin.also && plugin.also.some(t => t.toLowerCase().includes(q)))
+  );
+}
+
+function matchesMainFilter(plugin, filter) {
+  if (filter === "all") return true;
+  // Group name?
+  for (const [group, cats] of Object.entries(CATEGORY_GROUPS)) {
+    if (filter === group && cats.includes(plugin.category)) return true;
+  }
+  // Specific category
+  return plugin.category === filter;
+}
+
+function matchesSubFilter(plugin, subFilter) {
+  if (subFilter === "all") return true;
+  return plugin.subcategory === subFilter;
+}
+
+// ============================================================
+// CHIPS — MAIN ROW (top-level groups + key categories)
+// ============================================================
+function buildChips() {
+  const chips = $("#chips");
+
+  // Top-level groups
+  for (const group of Object.keys(CATEGORY_GROUPS)) {
+    const btn = document.createElement("button");
+    btn.className = "chip";
+    btn.dataset.cat = group;
+    btn.dataset.level = "group";
+    btn.textContent = group;
+    chips.appendChild(btn);
+  }
+
+  // Separator
+  const sep = document.createElement("span");
+  sep.style.cssText = "color: var(--fg-dim); padding: 0 0.3rem;";
+  sep.textContent = "|";
+  chips.appendChild(sep);
+
+  // Top sub-category chips (most-reached-for top-level categories)
+  const topCats = ["Reverb", "Delay", "Distortion", "Tape/Lo-fi", "Synth · Analog", "Sampler", "Multi-FX", "Creative"];
+  for (const cat of topCats) {
+    const btn = document.createElement("button");
+    btn.className = "chip";
+    btn.dataset.cat = cat;
+    btn.dataset.level = "main";
+    btn.textContent = cat;
+    chips.appendChild(btn);
+  }
+
+  chips.addEventListener("click", e => {
+    const chip = e.target.closest(".chip");
+    if (!chip) return;
+    $$(".chip", chips).forEach(c => c.classList.remove("active"));
+    chip.classList.add("active");
+    currentMainFilter = chip.dataset.cat;
+    currentSubFilter = "all";  // reset sub-filter when changing main
+    buildSubChips();
+    render();
+  });
+}
+
+// ============================================================
+// CHIPS — SUB ROW (appears when a specific category is active)
+// ============================================================
+function buildSubChips() {
+  const subchips = $("#subchips");
+  subchips.innerHTML = "";
+
+  // Only show sub-chips when a SPECIFIC category is selected (not "all" or a group)
+  const isSpecificCategory = (
+    currentMainFilter !== "all" &&
+    !Object.keys(CATEGORY_GROUPS).includes(currentMainFilter)
+  );
+
+  if (!isSpecificCategory) {
+    subchips.classList.add("hidden");
+    return;
+  }
+
+  const subs = subcategoriesFor(currentMainFilter);
+  if (subs.length <= 1) {
+    // Only one sub-category — don't bother showing the row
+    subchips.classList.add("hidden");
+    return;
+  }
+
+  // Label
+  const label = document.createElement("span");
+  label.className = "chip-group-label";
+  label.textContent = `${currentMainFilter}:`;
+  subchips.appendChild(label);
+
+  // "All" sub-chip
+  const allBtn = document.createElement("button");
+  allBtn.className = "subchip active";
+  allBtn.dataset.sub = "all";
+  allBtn.textContent = "All";
+  subchips.appendChild(allBtn);
+
+  for (const sub of subs) {
+    const btn = document.createElement("button");
+    btn.className = "subchip";
+    btn.dataset.sub = sub;
+    btn.textContent = sub;
+    subchips.appendChild(btn);
+  }
+
+  subchips.classList.remove("hidden");
+
+  // Delegated click
+  subchips.onclick = e => {
+    const sc = e.target.closest(".subchip");
+    if (!sc) return;
+    $$(".subchip", subchips).forEach(c => c.classList.remove("active"));
+    sc.classList.add("active");
+    currentSubFilter = sc.dataset.sub;
+    render();
+  };
+}
+
+// ============================================================
+// BUILD RESULTS (initial DOM structure)
+// ============================================================
+function buildResults() {
+  const results = $("#results");
+  results.innerHTML = "";
+
+  // Group: top-level group → category → subcategory → plugins
+  const grouped = {};
+  for (const p of PLUGINS) {
+    const g = getGroup(p.category);
+    if (!grouped[g]) grouped[g] = {};
+    if (!grouped[g][p.category]) grouped[g][p.category] = {};
+    if (!grouped[g][p.category][p.subcategory]) grouped[g][p.category][p.subcategory] = [];
+    grouped[g][p.category][p.subcategory].push(p);
+  }
+
+  const renderOrder = [...Object.keys(CATEGORY_GROUPS), "OTHER"];
+
+  for (const group of renderOrder) {
+    if (!grouped[group]) continue;
+
+    const parentSection = document.createElement("section");
+    parentSection.className = "category-section parent-section";
+    parentSection.id = `group-${group.toLowerCase()}`;
+
+    const parentHeader = document.createElement("div");
+    parentHeader.className = "category-header parent-cat";
+    parentHeader.innerHTML = `<h2>${group}</h2>`;
+    parentSection.appendChild(parentHeader);
+
+    const orderedCats = group === "OTHER"
+      ? Object.keys(grouped[group])
+      : CATEGORY_GROUPS[group].filter(c => grouped[group][c]);
+
+    for (const cat of orderedCats) {
+      const catData = grouped[group][cat];
+      if (!catData) continue;
+
+      const subSection = document.createElement("section");
+      subSection.className = "category-section";
+      subSection.dataset.category = cat;
+      subSection.id = `cat-${slug(cat)}`;
+
+      const subHeader = document.createElement("div");
+      subHeader.className = "category-header";
+      subHeader.innerHTML = `<h2>${cat}</h2><span class="count" data-count></span>`;
+      subSection.appendChild(subHeader);
+
+      // For each subcategory within this category, create a group
+      const orderedSubs = subcategoriesFor(cat);
+      for (const sub of orderedSubs) {
+        const subPlugins = catData[sub];
+        if (!subPlugins) continue;
+
+        const subGroup = document.createElement("div");
+        subGroup.className = "subcat-group";
+        subGroup.dataset.subcategory = sub;
+
+        const subHdr = document.createElement("div");
+        subHdr.className = "subcat-header";
+        subHdr.innerHTML = `<span>${sub}</span><span class="subcat-count" data-subcount></span>`;
+        subGroup.appendChild(subHdr);
+
+        const grid = document.createElement("div");
+        grid.className = "plugin-grid";
+
+        for (const plugin of subPlugins) {
+          const item = document.createElement("article");
+          item.className = "plugin";
+          item.dataset.name = plugin.name.toLowerCase();
+          item.dataset.manufacturer = plugin.manufacturer.toLowerCase();
+          item.dataset.category = plugin.category;
+          item.dataset.subcategory = plugin.subcategory;
+          item.dataset.desc = plugin.desc.toLowerCase();
+          item.dataset.also = (plugin.also || []).join(",").toLowerCase();
+
+          const alsoTags = (plugin.also || [])
+            .map(t => `<span class="tag also">${escapeHTML(t)}</span>`)
+            .join("");
+
+          item.innerHTML = `
+            <div class="plugin-name">
+              <span class="plugin-name-text">${escapeHTML(plugin.name)}</span>
+              <span class="manufacturer"> · ${escapeHTML(plugin.manufacturer)}</span>
+            </div>
+            <div class="plugin-desc">${escapeHTML(plugin.desc)}</div>
+            ${alsoTags ? `<div class="plugin-tags">${alsoTags}</div>` : ""}
+          `;
+          grid.appendChild(item);
+        }
+        subGroup.appendChild(grid);
+        subSection.appendChild(subGroup);
+      }
+
+      parentSection.appendChild(subSection);
+    }
+    results.appendChild(parentSection);
+  }
+}
+
+// ============================================================
+// RENDER (apply current filter/search to DOM)
+// ============================================================
+function render() {
+  const query = currentSearch.toLowerCase().trim();
+  let visibleCount = 0;
+
+  // Update each plugin's visibility
+  for (const plugin of PLUGINS) {
+    const matchingEls = $$(`article.plugin[data-name="${CSS.escape(plugin.name.toLowerCase())}"][data-manufacturer="${CSS.escape(plugin.manufacturer.toLowerCase())}"][data-category="${CSS.escape(plugin.category)}"]`);
+    // There should only be one matching DOM element (we group by category strictly), but defend just in case
+    for (const el of matchingEls) {
+      const visible = matchesSearch(plugin, query)
+                   && matchesMainFilter(plugin, currentMainFilter)
+                   && matchesSubFilter(plugin, currentSubFilter);
+
+      if (visible) {
+        visibleCount++;
+        el.classList.remove("hidden");
+        if (query) {
+          const nameEl = el.querySelector(".plugin-name-text");
+          const descEl = el.querySelector(".plugin-desc");
+          if (nameEl) nameEl.innerHTML = highlightMatch(plugin.name, query);
+          if (descEl) descEl.innerHTML = highlightMatch(plugin.desc, query);
+        } else {
+          const nameEl = el.querySelector(".plugin-name-text");
+          const descEl = el.querySelector(".plugin-desc");
+          if (nameEl) nameEl.textContent = plugin.name;
+          if (descEl) descEl.textContent = plugin.desc;
+        }
+      } else {
+        el.classList.add("hidden");
+      }
+    }
+  }
+
+  // Hide empty sub-groups and update their counts
+  $$(".subcat-group").forEach(group => {
+    const visiblePlugins = $$("article.plugin:not(.hidden)", group);
+    const countEl = $("[data-subcount]", group);
+    if (countEl) countEl.textContent = visiblePlugins.length;
+    if (visiblePlugins.length === 0) {
+      group.classList.add("empty");
+    } else {
+      group.classList.remove("empty");
+    }
+  });
+
+  // Hide empty category sections and update counts
+  $$(".category-section[data-category]").forEach(section => {
+    const visiblePlugins = $$("article.plugin:not(.hidden)", section);
+    const countEl = $("[data-count]", section);
+    if (countEl) countEl.textContent = `${visiblePlugins.length} plugins`;
+    if (visiblePlugins.length === 0) {
+      section.classList.add("empty");
+    } else {
+      section.classList.remove("empty");
+    }
+  });
+
+  // Hide empty parent sections
+  $$(".parent-section").forEach(section => {
+    const visibleSubs = $$(".category-section:not(.empty)[data-category]", section);
+    if (visibleSubs.length === 0) {
+      section.classList.add("empty");
+    } else {
+      section.classList.remove("empty");
+    }
+  });
+
+  $("#counterNum").textContent = visibleCount;
+  $("#counterTotal").textContent = PLUGINS.length;
+  $("#noResults").classList.toggle("visible", visibleCount === 0);
+  $("#searchClear").classList.toggle("visible", query.length > 0);
+}
+
+// ============================================================
+// QUICK PICK (random reroll)
+// ============================================================
+function showRandomPick() {
+  // Avoid repeating the last few picks
+  const recentLimit = Math.min(8, Math.floor(QUICK_PICKS.length / 2));
+  let available = QUICK_PICKS.filter(p => !qpHistory.slice(-recentLimit).includes(p.q));
+  if (available.length === 0) available = QUICK_PICKS;
+
+  const choice = available[Math.floor(Math.random() * available.length)];
+  qpHistory.push(choice.q);
+
+  $("#qpQ").textContent = choice.q;
+  $("#qpA").textContent = choice.a;
+  $("#quickpickBanner").classList.add("visible");
+}
+
+function hideQuickPick() {
+  $("#quickpickBanner").classList.remove("visible");
+}
+
+// ============================================================
+// JUMP NAV
+// ============================================================
+function buildJumpNav() {
+  const nav = $("#jumpNav");
+  for (const group of Object.keys(CATEGORY_GROUPS)) {
+    const a = document.createElement("a");
+    a.href = `#group-${group.toLowerCase()}`;
+    a.textContent = group;
+    a.className = "parent";
+    nav.appendChild(a);
+    for (const cat of CATEGORY_GROUPS[group]) {
+      const hasPlugins = PLUGINS.some(p => p.category === cat);
+      if (!hasPlugins) continue;
+      const link = document.createElement("a");
+      link.href = `#cat-${slug(cat)}`;
+      link.textContent = cat;
+      nav.appendChild(link);
+    }
+  }
+}
+
+// ============================================================
+// THEME
+// ============================================================
+function setupTheme() {
+  const btn = $("#themeToggle");
+  const stored = localStorage.getItem("reckonerTheme") || "dark";
+  document.body.dataset.theme = stored;
+  btn.innerHTML = stored === "dark" ? "◐ Light" : "◑ Dark";
+  btn.addEventListener("click", () => {
+    const next = document.body.dataset.theme === "dark" ? "light" : "dark";
+    document.body.dataset.theme = next;
+    localStorage.setItem("reckonerTheme", next);
+    btn.innerHTML = next === "dark" ? "◐ Light" : "◑ Dark";
+  });
+}
+
+// ============================================================
+// SEARCH
+// ============================================================
+function setupSearch() {
+  const input = $("#search");
+  const clear = $("#searchClear");
+  input.addEventListener("input", e => {
+    currentSearch = e.target.value;
+    render();
+  });
+  clear.addEventListener("click", () => {
+    input.value = "";
+    currentSearch = "";
+    render();
+    input.focus();
+  });
+  document.addEventListener("keydown", e => {
+    if (e.key === "/" && document.activeElement !== input) {
+      e.preventDefault();
+      input.focus();
+    }
+    if (e.key === "Escape" && document.activeElement === input) {
+      input.value = "";
+      currentSearch = "";
+      render();
+    }
+  });
+}
+
+// ============================================================
+// QUICK PICK BUTTONS
+// ============================================================
+function setupQuickPick() {
+  $("#diceBtn").addEventListener("click", showRandomPick);
+  $("#qpReroll").addEventListener("click", showRandomPick);
+  $("#qpClose").addEventListener("click", hideQuickPick);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+buildChips();
+buildSubChips();
+buildResults();
+buildJumpNav();
+setupTheme();
+setupSearch();
+setupQuickPick();
+render();
+</script>
+</body>
+</html>
