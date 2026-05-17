@@ -4525,12 +4525,7 @@ function buildResults() {
         for (const plugin of subPlugins) {
           const item = document.createElement("article");
           item.className = "plugin";
-          item.dataset.name = plugin.name.toLowerCase();
-          item.dataset.manufacturer = plugin.manufacturer.toLowerCase();
-          item.dataset.category = plugin.category;
-          item.dataset.subcategory = plugin.subcategory;
-          item.dataset.desc = plugin.desc.toLowerCase();
-          item.dataset.also = (plugin.also || []).join(",").toLowerCase();
+          item.dataset.idx = PLUGINS.indexOf(plugin);
 
           const alsoTags = (plugin.also || [])
             .map(t => `<span class="tag also">${escapeHTML(t)}</span>`)
@@ -4563,34 +4558,36 @@ function render() {
   const query = currentSearch.toLowerCase().trim();
   let visibleCount = 0;
 
-  // Update each plugin's visibility
-  for (const plugin of PLUGINS) {
-    const matchingEls = $$(`article.plugin[data-name="${CSS.escape(plugin.name.toLowerCase())}"][data-manufacturer="${CSS.escape(plugin.manufacturer.toLowerCase())}"][data-category="${CSS.escape(plugin.category)}"]`);
-    // There should only be one matching DOM element (we group by category strictly), but defend just in case
-    for (const el of matchingEls) {
-      const visible = matchesSearch(plugin, query)
-                   && matchesMainFilter(plugin, currentMainFilter)
-                   && matchesSubFilter(plugin, currentSubFilter);
+  // Iterate every plugin element directly and look up the plugin via its index.
+  // Previously we used CSS.escape() to build attribute selectors, but CSS.escape
+  // is for class/id selectors — applied to attribute values containing spaces or
+  // parentheses (e.g. "Cabbage Audio (Puremagnetik)") it produces escape sequences
+  // that don't match the actual attribute content, breaking the lookup silently.
+  $$("article.plugin").forEach(el => {
+    const idx = parseInt(el.dataset.idx, 10);
+    const plugin = PLUGINS[idx];
+    if (!plugin) { el.classList.add("hidden"); return; }
 
-      if (visible) {
-        visibleCount++;
-        el.classList.remove("hidden");
-        if (query) {
-          const nameEl = el.querySelector(".plugin-name-text");
-          const descEl = el.querySelector(".plugin-desc");
-          if (nameEl) nameEl.innerHTML = highlightMatch(plugin.name, query);
-          if (descEl) descEl.innerHTML = highlightMatch(plugin.desc, query);
-        } else {
-          const nameEl = el.querySelector(".plugin-name-text");
-          const descEl = el.querySelector(".plugin-desc");
-          if (nameEl) nameEl.textContent = plugin.name;
-          if (descEl) descEl.textContent = plugin.desc;
-        }
+    const visible = matchesSearch(plugin, query)
+                 && matchesMainFilter(plugin, currentMainFilter)
+                 && matchesSubFilter(plugin, currentSubFilter);
+
+    if (visible) {
+      visibleCount++;
+      el.classList.remove("hidden");
+      const nameEl = el.querySelector(".plugin-name-text");
+      const descEl = el.querySelector(".plugin-desc");
+      if (query) {
+        if (nameEl) nameEl.innerHTML = highlightMatch(plugin.name, query);
+        if (descEl) descEl.innerHTML = highlightMatch(plugin.desc, query);
       } else {
-        el.classList.add("hidden");
+        if (nameEl) nameEl.textContent = plugin.name;
+        if (descEl) descEl.textContent = plugin.desc;
       }
+    } else {
+      el.classList.add("hidden");
     }
-  }
+  });
 
   // Hide empty sub-groups and update their counts
   $$(".subcat-group").forEach(group => {
